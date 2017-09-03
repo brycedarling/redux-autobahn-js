@@ -99,7 +99,7 @@ const getSubscription = action => action.subscription;
 const handleAction = (connection, session, dispatch, next, action) => {
   switch (action.type) {
     case types.OPEN_CONNECTION:
-      return !isConnected(session) ? dispatch(connected()) : connection.open();
+      return isConnected(session) ? dispatch(connected()) : connection.open();
 
     case types.CLOSE_CONNECTION:
       return !isConnected(session) ? dispatch(disconnected()) : connection.close();
