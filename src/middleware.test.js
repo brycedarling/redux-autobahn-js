@@ -3,24 +3,47 @@ import createMiddleware from './middleware';
 import * as actionCreators from './actions';
 import * as types from './types';
 
+const createTestConnection = () => new Connection({
+  url: 'ws://localhost:8000/',
+  realm: 'realm1',
+});
+
+const createTestStore = () => {
+  const actions = [];
+  return {
+    actions,
+    dispatch: (action) => {
+      actions.push(action);
+    },
+  };
+};
+
+const createTestSession = () => ({ id: 1, isOpen: false });
+
+const setup = (options = {}) => {
+  const connection = options.connection || createTestConnection();
+  const store = options.store || createTestStore();
+  const session = options.session || createTestSession();
+  const middleware = createMiddleware(connection);
+  const nextHandler = middleware(store);
+
+  return {
+    connection,
+    store,
+    session,
+    middleware,
+    nextHandler,
+  };
+};
+
 describe('middleware', () => {
   describe('when the connection opens', () => {
     it('dispatches a CONNECTION_OPENED action with the given session', () => {
-      const connection = new Connection({
-        url: 'ws://localhost:8000/',
-        realm: 'realm1',
-      });
-      const middleware = createMiddleware(connection);
-      const actions = [];
-      const store = {
-        dispatch: (action) => {
-          actions.push(action);
-        },
-      };
-      middleware(store);
-      const session = { id: 1, isOpen: true };
+      const { connection, store, session } = setup();
+
       connection.onopen(session);
-      expect(actions).toEqual([{
+
+      expect(store.actions).toEqual([{
         type: types.CONNECTION_OPENED,
         session,
       }]);
@@ -29,20 +52,11 @@ describe('middleware', () => {
 
   describe('when the connection closes', () => {
     it('dispatches a CONNECTION_CLOSED action', () => {
-      const connection = new Connection({
-        url: 'ws://localhost:8000/',
-        realm: 'realm1',
-      });
-      const middleware = createMiddleware(connection);
-      const actions = [];
-      const store = {
-        dispatch: (action) => {
-          actions.push(action);
-        },
-      };
-      middleware(store);
-      connection.onclose();
-      expect(actions).toEqual([{
+      const { connection, store, session } = setup();
+
+      connection.onclose(session);
+
+      expect(store.actions).toEqual([{
         type: types.CONNECTION_CLOSED,
       }]);
     });
@@ -50,23 +64,15 @@ describe('middleware', () => {
 
   describe('when handling the OPEN_CONNECTION action', () => {
     it('dispatches connected if it is already connected', () => {
-      const connection = new Connection({
-        url: 'ws://localhost:8000/',
-        realm: 'realm1',
-      });
-      const middleware = createMiddleware(connection);
-      const actions = [];
-      const store = {
-        dispatch: (action) => {
-          actions.push(action);
-        },
-      };
-      const f = middleware(store);
       const session = { id: 1, isOpen: true };
+
+      const { connection, store, nextHandler } = setup({ session });
+
       connection.onopen(session);
-      const action = actionCreators.openConnection();
-      f(undefined)(action);
-      expect(actions).toEqual([{
+
+      nextHandler()(actionCreators.openConnection());
+
+      expect(store.actions).toEqual([{
         type: types.CONNECTION_OPENED,
         session,
       }, {
@@ -75,26 +81,16 @@ describe('middleware', () => {
     });
 
     it('calls open on the connection', () => {
-      const connection = new Connection({
-        url: 'ws://localhost:8000/',
-        realm: 'realm1',
-      });
       let isOpen = false;
+      const connection = createTestConnection();
       connection.open = () => {
         isOpen = true;
       };
-      const middleware = createMiddleware(connection);
-      const actions = [];
-      const store = {
-        dispatch: (action) => {
-          actions.push(action);
-        },
-      };
-      const f = middleware(store);
-      const session = { id: 1, isOpen: false };
-      connection.onopen(session);
-      const action = actionCreators.openConnection();
-      f(undefined)(action);
+
+      const { nextHandler } = setup({ connection });
+
+      nextHandler()(actionCreators.openConnection());
+
       expect(isOpen).toEqual(true);
     });
   });

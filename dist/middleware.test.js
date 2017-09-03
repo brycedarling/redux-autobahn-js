@@ -18,24 +18,56 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+var createTestConnection = function createTestConnection() {
+  return new _autobahn.Connection({
+    url: 'ws://localhost:8000/',
+    realm: 'realm1'
+  });
+};
+
+var createTestStore = function createTestStore() {
+  var actions = [];
+  return {
+    actions: actions,
+    dispatch: function dispatch(action) {
+      actions.push(action);
+    }
+  };
+};
+
+var createTestSession = function createTestSession() {
+  return { id: 1, isOpen: false };
+};
+
+var setup = function setup() {
+  var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
+
+  var connection = options.connection || createTestConnection();
+  var store = options.store || createTestStore();
+  var session = options.session || createTestSession();
+  var middleware = (0, _middleware2.default)(connection);
+  var nextHandler = middleware(store);
+
+  return {
+    connection: connection,
+    store: store,
+    session: session,
+    middleware: middleware,
+    nextHandler: nextHandler
+  };
+};
+
 describe('middleware', function () {
   describe('when the connection opens', function () {
     it('dispatches a CONNECTION_OPENED action with the given session', function () {
-      var connection = new _autobahn.Connection({
-        url: 'ws://localhost:8000/',
-        realm: 'realm1'
-      });
-      var middleware = (0, _middleware2.default)(connection);
-      var actions = [];
-      var store = {
-        dispatch: function dispatch(action) {
-          actions.push(action);
-        }
-      };
-      middleware(store);
-      var session = { id: 1, isOpen: true };
+      var _setup = setup(),
+          connection = _setup.connection,
+          store = _setup.store,
+          session = _setup.session;
+
       connection.onopen(session);
-      expect(actions).toEqual([{
+
+      expect(store.actions).toEqual([{
         type: types.CONNECTION_OPENED,
         session: session
       }]);
@@ -44,20 +76,14 @@ describe('middleware', function () {
 
   describe('when the connection closes', function () {
     it('dispatches a CONNECTION_CLOSED action', function () {
-      var connection = new _autobahn.Connection({
-        url: 'ws://localhost:8000/',
-        realm: 'realm1'
-      });
-      var middleware = (0, _middleware2.default)(connection);
-      var actions = [];
-      var store = {
-        dispatch: function dispatch(action) {
-          actions.push(action);
-        }
-      };
-      middleware(store);
-      connection.onclose();
-      expect(actions).toEqual([{
+      var _setup2 = setup(),
+          connection = _setup2.connection,
+          store = _setup2.store,
+          session = _setup2.session;
+
+      connection.onclose(session);
+
+      expect(store.actions).toEqual([{
         type: types.CONNECTION_CLOSED
       }]);
     });
@@ -65,23 +91,18 @@ describe('middleware', function () {
 
   describe('when handling the OPEN_CONNECTION action', function () {
     it('dispatches connected if it is already connected', function () {
-      var connection = new _autobahn.Connection({
-        url: 'ws://localhost:8000/',
-        realm: 'realm1'
-      });
-      var middleware = (0, _middleware2.default)(connection);
-      var actions = [];
-      var store = {
-        dispatch: function dispatch(action) {
-          actions.push(action);
-        }
-      };
-      var f = middleware(store);
       var session = { id: 1, isOpen: true };
+
+      var _setup3 = setup({ session: session }),
+          connection = _setup3.connection,
+          store = _setup3.store,
+          nextHandler = _setup3.nextHandler;
+
       connection.onopen(session);
-      var action = actionCreators.openConnection();
-      f(undefined)(action);
-      expect(actions).toEqual([{
+
+      nextHandler()(actionCreators.openConnection());
+
+      expect(store.actions).toEqual([{
         type: types.CONNECTION_OPENED,
         session: session
       }, {
@@ -90,26 +111,17 @@ describe('middleware', function () {
     });
 
     it('calls open on the connection', function () {
-      var connection = new _autobahn.Connection({
-        url: 'ws://localhost:8000/',
-        realm: 'realm1'
-      });
       var isOpen = false;
+      var connection = createTestConnection();
       connection.open = function () {
         isOpen = true;
       };
-      var middleware = (0, _middleware2.default)(connection);
-      var actions = [];
-      var store = {
-        dispatch: function dispatch(action) {
-          actions.push(action);
-        }
-      };
-      var f = middleware(store);
-      var session = { id: 1, isOpen: false };
-      connection.onopen(session);
-      var action = actionCreators.openConnection();
-      f(undefined)(action);
+
+      var _setup4 = setup({ connection: connection }),
+          nextHandler = _setup4.nextHandler;
+
+      nextHandler()(actionCreators.openConnection());
+
       expect(isOpen).toEqual(true);
     });
   });
