@@ -58,6 +58,12 @@ var setup = function setup() {
 };
 
 describe('middleware', function () {
+  it('throws an error when it is not given an autobahn.Connection', function () {
+    expect(function () {
+      return (0, _middleware2.default)();
+    }).toThrow('autobahn.Connection required');
+  });
+
   describe('when the connection opens', function () {
     it('dispatches a CONNECTION_OPENED action with the given session', function () {
       var _setup = setup(),

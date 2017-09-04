@@ -37,6 +37,10 @@ const setup = (options = {}) => {
 };
 
 describe('middleware', () => {
+  it('throws an error when it is not given an autobahn.Connection', () => {
+    expect(() => createMiddleware()).toThrow('autobahn.Connection required');
+  });
+
   describe('when the connection opens', () => {
     it('dispatches a CONNECTION_OPENED action with the given session', () => {
       const { connection, store, session } = setup();
