@@ -89,40 +89,88 @@ describe('middleware', function () {
     });
   });
 
-  describe('when handling the OPEN_CONNECTION action', function () {
-    it('dispatches connected if it is already connected', function () {
+  describe('handling the OPEN_CONNECTION action', function () {
+    describe('when it is already connected', function () {
+      it('dispatches a CONNECTED action', function () {
+        var session = { id: 1, isOpen: true };
+
+        var _setup3 = setup({ session: session }),
+            connection = _setup3.connection,
+            store = _setup3.store,
+            nextHandler = _setup3.nextHandler;
+
+        connection.onopen(session);
+
+        nextHandler()(actionCreators.openConnection());
+
+        expect(store.actions).toEqual([{
+          type: types.CONNECTION_OPENED,
+          session: session
+        }, {
+          type: types.CONNECTED
+        }]);
+      });
+    });
+
+    describe('when it is not connected', function () {
+      it('calls open on the connection', function () {
+        var isOpen = false;
+        var connection = createTestConnection();
+        connection.open = function () {
+          isOpen = true;
+        };
+
+        var _setup4 = setup({ connection: connection }),
+            nextHandler = _setup4.nextHandler;
+
+        nextHandler()(actionCreators.openConnection());
+
+        expect(isOpen).toEqual(true);
+      });
+    });
+  });
+
+  describe('handling the CLOSE_CONNECTION action', function () {
+    describe('when it is already disconnected', function () {
+      it('dispatches a DISCONNECTED action', function () {
+        var session = { id: 1, isOpen: false };
+
+        var _setup5 = setup({ session: session }),
+            connection = _setup5.connection,
+            store = _setup5.store,
+            nextHandler = _setup5.nextHandler;
+
+        connection.onclose(session);
+
+        nextHandler()(actionCreators.closeConnection());
+
+        expect(store.actions).toEqual([{
+          type: types.CONNECTION_CLOSED
+        }, {
+          type: types.DISCONNECTED
+        }]);
+      });
+    });
+  });
+
+  describe('when it is connected', function () {
+    it('calls close on the connection', function () {
+      var isClosed = false;
+      var connection = createTestConnection();
+      connection.close = function () {
+        isClosed = true;
+      };
+
       var session = { id: 1, isOpen: true };
 
-      var _setup3 = setup({ session: session }),
-          connection = _setup3.connection,
-          store = _setup3.store,
-          nextHandler = _setup3.nextHandler;
+      var _setup6 = setup({ connection: connection, session: session }),
+          nextHandler = _setup6.nextHandler;
 
       connection.onopen(session);
 
-      nextHandler()(actionCreators.openConnection());
+      nextHandler()(actionCreators.closeConnection());
 
-      expect(store.actions).toEqual([{
-        type: types.CONNECTION_OPENED,
-        session: session
-      }, {
-        type: types.CONNECTED
-      }]);
-    });
-
-    it('calls open on the connection', function () {
-      var isOpen = false;
-      var connection = createTestConnection();
-      connection.open = function () {
-        isOpen = true;
-      };
-
-      var _setup4 = setup({ connection: connection }),
-          nextHandler = _setup4.nextHandler;
-
-      nextHandler()(actionCreators.openConnection());
-
-      expect(isOpen).toEqual(true);
+      expect(isClosed).toEqual(true);
     });
   });
 });

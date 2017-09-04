@@ -62,36 +62,80 @@ describe('middleware', () => {
     });
   });
 
-  describe('when handling the OPEN_CONNECTION action', () => {
-    it('dispatches connected if it is already connected', () => {
+  describe('handling the OPEN_CONNECTION action', () => {
+    describe('when it is already connected', () => {
+      it('dispatches a CONNECTED action', () => {
+        const session = { id: 1, isOpen: true };
+
+        const { connection, store, nextHandler } = setup({ session });
+
+        connection.onopen(session);
+
+        nextHandler()(actionCreators.openConnection());
+
+        expect(store.actions).toEqual([{
+          type: types.CONNECTION_OPENED,
+          session,
+        }, {
+          type: types.CONNECTED,
+        }]);
+      });
+    });
+
+    describe('when it is not connected', () => {
+      it('calls open on the connection', () => {
+        let isOpen = false;
+        const connection = createTestConnection();
+        connection.open = () => {
+          isOpen = true;
+        };
+
+        const { nextHandler } = setup({ connection });
+
+        nextHandler()(actionCreators.openConnection());
+
+        expect(isOpen).toEqual(true);
+      });
+    });
+  });
+
+  describe('handling the CLOSE_CONNECTION action', () => {
+    describe('when it is already disconnected', () => {
+      it('dispatches a DISCONNECTED action', () => {
+        const session = { id: 1, isOpen: false };
+
+        const { connection, store, nextHandler } = setup({ session });
+
+        connection.onclose(session);
+
+        nextHandler()(actionCreators.closeConnection());
+
+        expect(store.actions).toEqual([{
+          type: types.CONNECTION_CLOSED,
+        }, {
+          type: types.DISCONNECTED,
+        }]);
+      });
+    });
+  });
+
+  describe('when it is connected', () => {
+    it('calls close on the connection', () => {
+      let isClosed = false;
+      const connection = createTestConnection();
+      connection.close = () => {
+        isClosed = true;
+      };
+
       const session = { id: 1, isOpen: true };
 
-      const { connection, store, nextHandler } = setup({ session });
+      const { nextHandler } = setup({ connection, session });
 
       connection.onopen(session);
 
-      nextHandler()(actionCreators.openConnection());
+      nextHandler()(actionCreators.closeConnection());
 
-      expect(store.actions).toEqual([{
-        type: types.CONNECTION_OPENED,
-        session,
-      }, {
-        type: types.CONNECTED,
-      }]);
-    });
-
-    it('calls open on the connection', () => {
-      let isOpen = false;
-      const connection = createTestConnection();
-      connection.open = () => {
-        isOpen = true;
-      };
-
-      const { nextHandler } = setup({ connection });
-
-      nextHandler()(actionCreators.openConnection());
-
-      expect(isOpen).toEqual(true);
+      expect(isClosed).toEqual(true);
     });
   });
 });
