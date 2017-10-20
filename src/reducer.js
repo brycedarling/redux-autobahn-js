@@ -1,6 +1,16 @@
+/**
+ * @namespace redux-autobahn:reducer
+ */
 import { combineReducers } from 'redux';
 import * as types from './types';
 
+/**
+ * @function connection
+ * @memberof redux-autobahn:reducer
+ * @param  {object} state  the state
+ * @param  {object} action redux action
+ * @return {object}        the new state
+ */
 const connection = (state = { isConnected: false, isOpen: false }, action) => {
   switch (action.type) {
     case types.CONNECTION_OPENED:
@@ -22,6 +32,13 @@ const connection = (state = { isConnected: false, isOpen: false }, action) => {
   }
 };
 
+/**
+ * @function session
+ * @memberof redux-autobahn:reducer
+ * @param  {object} state  the state
+ * @param  {object} action redux action
+ * @return {object}        the new state
+ */
 const session = (state = { id: null, isOpen: false }, action) => {
   switch (action.type) {
     case types.CONNECTION_OPENED:
@@ -43,6 +60,13 @@ const session = (state = { id: null, isOpen: false }, action) => {
   }
 };
 
+/**
+ * @function subscriptions
+ * @memberof redux-autobahn:reducer
+ * @param  {object} state  the state
+ * @param  {object} action redux action
+ * @return {object}        the new state
+ */
 const subscriptions = (state = [], action) => {
   switch (action.type) {
     case types.SUBSCRIBED:
@@ -63,6 +87,13 @@ const subscriptions = (state = [], action) => {
   }
 };
 
+/**
+ * @function registrations
+ * @memberof redux-autobahn:reducer
+ * @param  {object} state  the state
+ * @param  {object} action redux action
+ * @return {object}        the new state
+ */
 const registrations = (state = [], action) => {
   switch (action.type) {
     case types.REGISTERED:
