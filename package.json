@@ -18,11 +18,13 @@
     "eslint": "^4.5.0",
     "eslint-config-airbnb-base": "^11.3.2",
     "eslint-plugin-import": "^2.7.0",
-    "jest": "^20.0.4"
+    "jest": "^20.0.4",
+    "jsdoc-to-markdown": "^3.0.0"
   },
   "scripts": {
     "build": "babel src -d dist",
     "dev": "yarn reset && yarn build && echo && yarn test && echo && yarn lint",
+    "docs": "yarn reset && yarn build && echo '# redux-autobahn-js\n' > README.md && jsdoc2md dist/**/*.js >> README.md",
     "lint": "eslint src",
     "reset": "rm -rf dist && mkdir dist",
     "test": "jest dist"
