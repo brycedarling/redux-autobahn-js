@@ -333,7 +333,12 @@ const assert = (assertion, message) => {
  * @param  {Connection} connection  the connection object
  */
 const createMiddleware = (connection) => {
-  assert(connection instanceof Connection, 'autobahn.Connection required');
+  assert(
+    connection &&
+      typeof connection.open === 'function' &&
+      typeof connection.close === 'function',
+    'autobahn.Connection required'
+  );
 
   return ({ dispatch }) => {
     let session = null;
