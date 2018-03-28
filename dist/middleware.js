@@ -376,7 +376,7 @@ var assert = function assert(assertion, message) {
  * @param  {Connection} connection  the connection object
  */
 var createMiddleware = function createMiddleware(connection) {
-  assert(connection instanceof _autobahn.Connection, 'autobahn.Connection required');
+  assert(connection && typeof connection.open === 'function' && typeof connection.close === 'function', 'autobahn.Connection required');
 
   return function (_ref) {
     var dispatch = _ref.dispatch;
