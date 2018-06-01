@@ -302,9 +302,15 @@ const handleAction = (connection, session, dispatch, next, action) => {
     case types.CALL:
       return !isConnected(session) ? dispatch(disconnected())
         : session.call(action.procedure, action.args, action.kwargs, action.options).then((res) => {
-          dispatch(result(res));
+          if (action.resultAction) {
+            return dispatch(action.resultAction(res));
+          }
+          return dispatch(result(res));
         }, (err) => {
-          dispatch(callError(err));
+          if (action.errorAction) {
+            return dispatch(action.errorAction(err));
+          }
+          return dispatch(callError(err));
         });
 
     default:
