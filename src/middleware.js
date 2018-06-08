@@ -4,10 +4,6 @@
 import { Connection } from 'autobahn';
 import * as types from './types';
 
-let _connection = null;
-let _session = null;
-let _dispatch = null;
-
 /**
  * Returns a redux action with type CONNECTED
  * @function connected
@@ -336,57 +332,59 @@ const assert = (assertion, message) => {
   }
 };
 
-/**
- * Sets the passed connection for the middleware that dispatches opened and closed connection actions and handles actions
- * @function setConnection
- * @memberof redux-autobahn:middleware
- * @param  {Connection} newConnection  the connection object
- */
-export const setConnection = (newConnection) => {
-  assert(
-    newConnection &&
-      typeof newConnection.open === 'function' &&
-      typeof newConnection.close === 'function',
-    'autobahn.Connection required'
-  );
+export default function autobahnMiddlewareFactory({ connection }) {
+  let connection = connection || null;
+  let session = null;
+  function autobahnMiddleware({ dispatch }) {
+    /**
+     * Sets the passed connection for the middleware that dispatches opened and closed connection actions and handles actions
+     * @function setConnection
+     * @memberof redux-autobahn:middleware
+     * @param  {Connection} newConnection  the connection object
+     */
+    autobahnMiddleware.setConnection = (newConnection) => {
+      assert(
+        newConnection &&
+          typeof newConnection.open === 'function' &&
+          typeof newConnection.close === 'function',
+        'autobahn.Connection required'
+      );
 
-  // explicitly close the connection first to set a new connection
-  assert(!_connection, 'connection already exists');
+      if (!autobahnMiddleware._connection) {
+        // close the existing connection
+        autobahnMiddleware.closeConnection('newConnection', 'new connection has been set');
+      }
 
-  _connection = newConnection;
+      newConnection.onopen = (s) => {
+        session = s;
+        dispatch(connectionOpened(s));
+      };
 
-  /* eslint-disable no-param-reassign */
-  _connection.onopen = (s) => {
-    _session = s;
+      newConnection.onclose = () => {
+        session = null;
+        dispatch(connectionClosed());
+      };
 
-    _dispatch(connectionOpened(_session));
-  };
+      autobahnMiddleware._connection = newConnection;
+    };
 
-  _connection.onclose = () => {
-    _session = null;
+    /**
+     * Closes the current autobahn connection
+     * @function closeConnection
+     * @memberof redux-autobahn:middleware
+     * @param  {string} reason  (optional) a WAMP URI providing a closing reason to the server side (e.g. 'com.myapp.close.signout'). default is `wamp.goodbye.normal`
+     * @param  {string} message  human-readable closing message
+     */
+    autobahnMiddleware.closeConnection = (reason, message) => {
+      autobahnMiddleware.close(reason, message);
+      autobahnMiddleware._connection = null;
+    };
 
-    _dispatch(connectionClosed());
-  };
-};
+    return next => action => {
+      if (!autobahnMiddleware._connection) return next(action);
+      handleAction(autobahnMiddleware._connection, session, dispatch, next, action);
+    }
+  }
 
-/**
- * Closes the current autobahn connection
- * @function closeConnection
- * @memberof redux-autobahn:middleware
- * @param  {string} reason  (optional) a WAMP URI providing a closing reason to the server side (e.g. 'com.myapp.close.signout'). default is `wamp.goodbye.normal`
- * @param  {string} message  human-readable closing message
- */
-export const closeConnection = (reason, message) => {
-  assert(_connection, 'connection to close does not exist');
-
-  _connection.close(reason, message);
-};
-
-export default ({ dispatch }) => {
-  _dispatch = dispatch;
-
-  return (next) => (action) => {
-    if (!_connection) return next(action);
-    return handleAction(_connection, _session, _dispatch, next, action);
-  };
-};
+  return autobahnMiddleware;
+}
