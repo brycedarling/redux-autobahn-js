@@ -129,14 +129,18 @@ var unregister = exports.unregister = function unregister(registration) {
  * @param {Array} args - An array of arguments.
  * @param {object} kwargs - An object of keyword arguments.
  * @param {object} options - An object of options.
+ * @param {object} resultAction - (optional) An action to be dispatched on call success.
+ * @param {object} errorAction - (optional) An action to be dispatched on call error.
  * @return {object} redux action
  */
-var call = exports.call = function call(procedure, args, kwargs, options) {
+var call = exports.call = function call(procedure, args, kwargs, options, resultAction, errorAction) {
   return {
     type: types.CALL,
     procedure: procedure,
     args: args,
     kwargs: kwargs,
-    options: options
+    options: options,
+    resultAction: resultAction,
+    errorAction: errorAction
   };
 };

@@ -4,10 +4,6 @@
 import { Connection } from 'autobahn';
 import * as types from './types';
 
-let _connection = null;
-let _session = null;
-let _dispatch = null;
-
 /**
  * Returns a redux action with type CONNECTED
  * @function connected
@@ -32,12 +28,12 @@ const disconnected = () => ({
  * Returns a redux action with type CONNECTION_OPENED and the given session object
  * @function connectionOpened
  * @memberof redux-autobahn:middleware
- * @param {object} session - The session object for the opened connection.
+ * @param {object} connection - The object for the opened connection.
  * @return {object} redux action
  */
-const connectionOpened = session => ({
+const connectionOpened = connection => ({
   type: types.CONNECTION_OPENED,
-  session,
+  session: connection.session,
 });
 
 /**
@@ -224,13 +220,13 @@ const result = value => ({
 });
 
 /**
- * Returns a boolean that represents if the session exists and is open, therefore it is connected
+ * Returns a boolean that represents if the session for the connection exists and is open, therefore it is connected
  * @function isConnected
  * @memberof redux-autobahn:middleware
- * @param  {object} session  the session object
- * @return {boolean}         returns true if the session exists and is open
+ * @param  {object} connection  the connection object
+ * @return {boolean}         returns true if the session for the connection exists and is open
  */
-const isConnected = session => session && session.isOpen;
+const isConnected = connection => connection && connection.isOpen;
 
 /**
  * Returns the subscription from the action
@@ -246,22 +242,21 @@ const getSubscription = action => action.subscription;
  * @function handleAction
  * @memberof redux-autobahn:middleware
  * @param  {object} connection  the connection object
- * @param  {object} session     the session object
  * @param  {function} dispatch  the dispatch function
  * @param  {function} next      the next function
  * @param  {object} action      the redux action
  */
-const handleAction = (connection, session, dispatch, next, action) => {
+const handleAction = (connection, dispatch, next, action) => {
   switch (action.type) {
     case types.OPEN_CONNECTION:
-      return isConnected(session) ? dispatch(connected()) : connection.open();
+      return isConnected(connection) ? dispatch(connected()) : connection.open();
 
     case types.CLOSE_CONNECTION:
-      return !isConnected(session) ? dispatch(disconnected()) : connection.close();
+      return !isConnected(connection) ? dispatch(disconnected()) : connection.close();
 
     case types.SUBSCRIBE:
-      return !isConnected(session) ? dispatch(disconnected())
-        : session.subscribe(action.topic, (args, kwargs, details) => {
+      return !isConnected(connection) ? dispatch(disconnected())
+        : connection.session.subscribe(action.topic, (args, kwargs, details) => {
           dispatch(event(action.topic, args, kwargs, details));
         }).then((subscription) => {
           dispatch(subscribed(subscription));
@@ -270,8 +265,8 @@ const handleAction = (connection, session, dispatch, next, action) => {
         });
 
     case types.UNSUBSCRIBE:
-      return !isConnected(session) ? dispatch(disconnected())
-        : session.unsubscribe(getSubscription(action)).then((success) => {
+      return !isConnected(connection) ? dispatch(disconnected())
+        : connection.session.unsubscribe(getSubscription(action)).then((success) => {
           if (success) dispatch(unsubscribed(action.subscription));
           else unsubscribeError('Failed to unsubscribe');
         }, (err) => {
@@ -279,8 +274,8 @@ const handleAction = (connection, session, dispatch, next, action) => {
         });
 
     case types.PUBLISH:
-      return !isConnected(session) ? dispatch(disconnected())
-        : session.publish(action.topic, action.args, action.kwargs,
+      return !isConnected(connection) ? dispatch(disconnected())
+        : connection.session.publish(action.topic, action.args, action.kwargs,
           { ...action.options, acknowledge: true }).then((pub) => {
           dispatch(published(pub, action.topic, action.args, action.kwargs, action.options));
         }, (err) => {
@@ -288,24 +283,24 @@ const handleAction = (connection, session, dispatch, next, action) => {
         });
 
     case types.REGISTER:
-      return !isConnected(session) ? dispatch(disconnected())
-        : session.register(action.procedure, action.endpoint, action.options).then((reg) => {
+      return !isConnected(connection) ? dispatch(disconnected())
+        : connection.session.register(action.procedure, action.endpoint, action.options).then((reg) => {
           dispatch(registered(reg));
         }, (err) => {
           dispatch(registerError(err));
         });
 
     case types.UNREGISTER:
-      return !isConnected(session) ? dispatch(disconnected())
-        : session.unregister(action.registration).then(() => {
+      return !isConnected(connection) ? dispatch(disconnected())
+        : connection.session.unregister(action.registration).then(() => {
           dispatch(unregistered(action.registration));
         }, (err) => {
           dispatch(unregisterError(err));
         });
 
     case types.CALL:
-      return !isConnected(session) ? dispatch(disconnected())
-        : session.call(action.procedure, action.args, action.kwargs, action.options).then((res) => {
+      return !isConnected(connection) ? dispatch(disconnected())
+        : connection.session.call(action.procedure, action.args, action.kwargs, action.options).then((res) => {
           if (action.resultAction) {
             return dispatch(action.resultAction(res));
           }
@@ -336,57 +331,56 @@ const assert = (assertion, message) => {
   }
 };
 
-/**
- * Sets the passed connection for the middleware that dispatches opened and closed connection actions and handles actions
- * @function setConnection
- * @memberof redux-autobahn:middleware
- * @param  {Connection} newConnection  the connection object
- */
-export const setConnection = (newConnection) => {
-  assert(
-    newConnection &&
-      typeof newConnection.open === 'function' &&
-      typeof newConnection.close === 'function',
-    'autobahn.Connection required'
-  );
+export default function autobahnMiddlewareFactory({ connection } = {}) {
+  function autobahnMiddleware({ dispatch }) {
+    /**
+     * Sets the passed connection for the middleware that dispatches opened and closed connection actions and handles actions
+     * @function setConnection
+     * @memberof redux-autobahn:middleware
+     * @param  {Connection} newConnection  the connection object
+     */
+    autobahnMiddleware.setConnection = (newConnection) => {
+      assert(
+        newConnection &&
+          typeof newConnection.open === 'function' &&
+          typeof newConnection.close === 'function',
+        'autobahn.Connection required'
+      );
 
-  // explicitly close the connection first to set a new connection
-  assert(!_connection, 'connection already exists');
+      if (autobahnMiddleware._connection) {
+        // close the existing connection
+        autobahnMiddleware.closeConnection('newConnection', 'new connection has been set');
+      }
 
-  _connection = newConnection;
+      newConnection.onopen = (s) => {
+        dispatch(connectionOpened(newConnection));
+      };
 
-  /* eslint-disable no-param-reassign */
-  _connection.onopen = (s) => {
-    _session = s;
+      newConnection.onclose = () => {
+        autobahnMiddleware._connection = null;
+        dispatch(connectionClosed());
+      };
 
-    _dispatch(connectionOpened(_session));
-  };
+      autobahnMiddleware._connection = newConnection;
+    };
 
-  _connection.onclose = () => {
-    _session = null;
+    /**
+     * Closes the current autobahn connection
+     * @function closeConnection
+     * @memberof redux-autobahn:middleware
+     * @param  {string} reason  (optional) a WAMP URI providing a closing reason to the server side (e.g. 'com.myapp.close.signout'). default is `wamp.goodbye.normal`
+     * @param  {string} message  human-readable closing message
+     */
+    autobahnMiddleware.closeConnection = (reason, message) => {
+      autobahnMiddleware.close(reason, message);
+    };
 
-    _dispatch(connectionClosed());
-  };
-};
+    if (connection) autobahnMiddleware.setConnection(connection);
 
-/**
- * Closes the current autobahn connection
- * @function closeConnection
- * @memberof redux-autobahn:middleware
- * @param  {string} reason  (optional) a WAMP URI providing a closing reason to the server side (e.g. 'com.myapp.close.signout'). default is `wamp.goodbye.normal`
- * @param  {string} message  human-readable closing message
- */
-export const closeConnection = (reason, message) => {
-  assert(_connection, 'connection to close does not exist');
+    return next => action => {
+      handleAction(autobahnMiddleware._connection, dispatch, next, action);
+    }
+  }
 
-  _connection.close(reason, message);
-};
-
-export default ({ dispatch }) => {
-  _dispatch = dispatch;
-
-  return (next) => (action) => {
-    if (!_connection) return next(action);
-    return handleAction(_connection, _session, _dispatch, next, action);
-  };
-};
+  return autobahnMiddleware;
+}
