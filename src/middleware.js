@@ -372,7 +372,9 @@ export default function autobahnMiddlewareFactory({ connection } = {}) {
      * @param  {string} message  human-readable closing message
      */
     autobahnMiddleware.closeConnection = (reason, message) => {
-      autobahnMiddleware.close(reason, message);
+      if (isConnected(autobahnMiddleware._connection)) {
+        autobahnMiddleware._connection.close(reason, message);
+      }
     };
 
     if (connection) autobahnMiddleware.setConnection(connection);
