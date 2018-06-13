@@ -111,10 +111,12 @@ describe('middleware', function () {
           connection = _setup2.connection,
           store = _setup2.store;
 
-      connection.onclose(connection.session);
+      connection.onclose('newConnection', 'new connection has been set');
 
       expect(store.actions).toEqual([{
-        type: types.CONNECTION_CLOSED
+        type: types.CONNECTION_CLOSED,
+        details: 'new connection has been set',
+        reason: 'newConnection'
       }]);
     });
   });
@@ -174,12 +176,14 @@ describe('middleware', function () {
             store = _setup5.store,
             nextHandler = _setup5.nextHandler;
 
-        connection.onclose(connection.session);
+        connection.onclose('newConnection', 'new connection has been set');
 
         nextHandler()(actionCreators.closeConnection());
 
         expect(store.actions).toEqual([{
-          type: types.CONNECTION_CLOSED
+          type: types.CONNECTION_CLOSED,
+          details: 'new connection has been set',
+          reason: 'newConnection'
         }, {
           type: types.DISCONNECTED
         }]);

@@ -1,7 +1,7 @@
+/* eslint-disable no-underscore-dangle,no-param-reassign,max-len,no-unused-vars */
 /**
  * @namespace redux-autobahn:middleware
  */
-import { Connection } from 'autobahn';
 import * as types from './types';
 
 /**
@@ -40,10 +40,14 @@ const connectionOpened = connection => ({
  * Returns a redux action with type CONNECTION_CLOSED
  * @function connectionClosed
  * @memberof redux-autobahn:middleware
+ * @param {string} reason reason for disconnection
+ * @param {object} details disconnect details
  * @return {object} redux action
  */
-const connectionClosed = () => ({
+const connectionClosed = (reason, details) => ({
   type: types.CONNECTION_CLOSED,
+  reason,
+  details,
 });
 
 /**
@@ -211,12 +215,20 @@ const callError = error => ({
  * Returns a redux action with type RESULT and the given result value
  * @function result
  * @memberof redux-autobahn:middleware
- * @param {object} value - The value of the result
+ * @param {object} procedure - Procedure that was called
+ * @param {object} args - Arguments with which procedure was called
+ * @param {object} kwargs - Arguments with which procedure was called
+ * @param {object} results - Call results
+ * @param {object} options - Options
  * @return {object} redux action
  */
-const result = value => ({
+const result = (procedure, args, kwargs, results, options) => ({
   type: types.RESULT,
-  result: value,
+  procedure,
+  args,
+  kwargs,
+  results,
+  options,
 });
 
 /**
@@ -304,7 +316,7 @@ const handleAction = (connection, dispatch, next, action) => {
           if (action.resultAction) {
             return dispatch(action.resultAction(res));
           }
-          return dispatch(result(res));
+          return dispatch(result(action.procedure, action.args, action.kwargs, res, action.options));
         }, (err) => {
           if (action.errorAction) {
             return dispatch(action.errorAction(err));
@@ -344,7 +356,7 @@ export default function autobahnMiddlewareFactory({ connection } = {}) {
         newConnection &&
           typeof newConnection.open === 'function' &&
           typeof newConnection.close === 'function',
-        'autobahn.Connection required'
+        'autobahn.Connection required',
       );
 
       if (autobahnMiddleware._connection) {
@@ -356,9 +368,9 @@ export default function autobahnMiddlewareFactory({ connection } = {}) {
         dispatch(connectionOpened(newConnection));
       };
 
-      newConnection.onclose = () => {
+      newConnection.onclose = (reason, details) => {
         autobahnMiddleware._connection = null;
-        dispatch(connectionClosed());
+        dispatch(connectionClosed(reason, details));
       };
 
       autobahnMiddleware._connection = newConnection;
@@ -379,10 +391,9 @@ export default function autobahnMiddlewareFactory({ connection } = {}) {
 
     if (connection) autobahnMiddleware.setConnection(connection);
 
-    return next => action => {
+    return next => (action) => {
       handleAction(autobahnMiddleware._connection, dispatch, next, action);
-    }
+    };
   }
-
   return autobahnMiddleware;
 }

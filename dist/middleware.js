@@ -4,14 +4,13 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; /**
-                                                                                                                                                                                                                                                                   * @namespace redux-autobahn:middleware
-                                                                                                                                                                                                                                                                   */
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; /* eslint-disable no-underscore-dangle,no-param-reassign,max-len,no-unused-vars */
+/**
+ * @namespace redux-autobahn:middleware
+ */
 
 
 exports.default = autobahnMiddlewareFactory;
-
-var _autobahn = require('autobahn');
 
 var _types = require('./types');
 
@@ -61,11 +60,15 @@ var connectionOpened = function connectionOpened(connection) {
  * Returns a redux action with type CONNECTION_CLOSED
  * @function connectionClosed
  * @memberof redux-autobahn:middleware
+ * @param {string} reason reason for disconnection
+ * @param {object} details disconnect details
  * @return {object} redux action
  */
-var connectionClosed = function connectionClosed() {
+var connectionClosed = function connectionClosed(reason, details) {
   return {
-    type: types.CONNECTION_CLOSED
+    type: types.CONNECTION_CLOSED,
+    reason: reason,
+    details: details
   };
 };
 
@@ -258,13 +261,21 @@ var callError = function callError(error) {
  * Returns a redux action with type RESULT and the given result value
  * @function result
  * @memberof redux-autobahn:middleware
- * @param {object} value - The value of the result
+ * @param {object} procedure - Procedure that was called
+ * @param {object} args - Arguments with which procedure was called
+ * @param {object} kwargs - Arguments with which procedure was called
+ * @param {object} results - Call results
+ * @param {object} options - Options
  * @return {object} redux action
  */
-var result = function result(value) {
+var result = function result(procedure, args, kwargs, results, options) {
   return {
     type: types.RESULT,
-    result: value
+    procedure: procedure,
+    args: args,
+    kwargs: kwargs,
+    results: results,
+    options: options
   };
 };
 
@@ -349,7 +360,7 @@ var handleAction = function handleAction(connection, dispatch, next, action) {
         if (action.resultAction) {
           return dispatch(action.resultAction(res));
         }
-        return dispatch(result(res));
+        return dispatch(result(action.procedure, action.args, action.kwargs, res, action.options));
       }, function (err) {
         if (action.errorAction) {
           return dispatch(action.errorAction(err));
@@ -401,9 +412,9 @@ function autobahnMiddlewareFactory() {
         dispatch(connectionOpened(newConnection));
       };
 
-      newConnection.onclose = function () {
+      newConnection.onclose = function (reason, details) {
         autobahnMiddleware._connection = null;
-        dispatch(connectionClosed());
+        dispatch(connectionClosed(reason, details));
       };
 
       autobahnMiddleware._connection = newConnection;
@@ -430,6 +441,5 @@ function autobahnMiddlewareFactory() {
       };
     };
   }
-
   return autobahnMiddleware;
 }

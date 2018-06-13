@@ -24,7 +24,7 @@ const createTestConnection = ({ session, isOpen } = {}) => {
     },
   });
   return conn;
-}
+};
 
 const createTestStore = () => {
   const actions = [];
@@ -75,10 +75,12 @@ describe('middleware', () => {
     it('dispatches a CONNECTION_CLOSED action', () => {
       const { connection, store } = setup();
 
-      connection.onclose(connection.session);
+      connection.onclose('newConnection', 'new connection has been set');
 
       expect(store.actions).toEqual([{
         type: types.CONNECTION_CLOSED,
+        details: 'new connection has been set',
+        reason: 'newConnection',
       }]);
     });
   });
@@ -131,12 +133,14 @@ describe('middleware', () => {
           connection: createTestConnection({ session, isOpen: false }),
         });
 
-        connection.onclose(connection.session);
+        connection.onclose('newConnection', 'new connection has been set');
 
         nextHandler()(actionCreators.closeConnection());
 
         expect(store.actions).toEqual([{
           type: types.CONNECTION_CLOSED,
+          details: 'new connection has been set',
+          reason: 'newConnection',
         }, {
           type: types.DISCONNECTED,
         }]);
@@ -149,7 +153,7 @@ describe('middleware', () => {
       const session = { id: 1, isOpen: true };
 
       const { connection, nextHandler } = setup({
-        connection: createTestConnection({ session, isOpen: true })
+        connection: createTestConnection({ session, isOpen: true }),
       });
       connection.close = () => {
         connection.isOpen = false;
