@@ -1,6 +1,6 @@
 {
   "name": "redux-autobahn-js",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Autobahn-js middleware for Redux",
   "main": "dist/index.js",
   "repository": "git+ssh://git@github.com/brycedarling/redux-autobahn-js.git",
