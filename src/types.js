@@ -18,6 +18,12 @@ export const DISCONNECTED = 'autobahn/DISCONNECTED';
  * @constant {string}
  * @memberof redux-autobahn:types
  */
+export const ON_DISCONNECT = 'autobahn/ON_DISCONNECT';
+
+/**
+ * @constant {string}
+ * @memberof redux-autobahn:types
+ */
 export const OPEN_CONNECTION = 'autobahn/OPEN_CONNECTION';
 
 /**

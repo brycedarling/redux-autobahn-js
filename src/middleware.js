@@ -1,7 +1,7 @@
+/* eslint-disable no-underscore-dangle,no-param-reassign */
 /**
  * @namespace redux-autobahn:middleware
  */
-import { Connection } from 'autobahn';
 import * as types from './types';
 
 /**
@@ -31,7 +31,7 @@ const disconnected = () => ({
  * @param {object} connection - The object for the opened connection.
  * @return {object} redux action
  */
-const connectionOpened = connection => ({
+const connectionOpened = (connection) => ({
   type: types.CONNECTION_OPENED,
   session: connection.session,
 });
@@ -47,13 +47,27 @@ const connectionClosed = () => ({
 });
 
 /**
+ * Returns a redux action with type CONNECTION_CLOSED
+ * @function connectionClosed
+ * @memberof redux-autobahn:middleware
+ * @param {string} reason reason for disconnection
+ * @param {object} details disconnect details
+ * @return {object} redux action
+ */
+const onDisconnect = (reason, details) => ({
+  type: types.ON_DISCONNECT,
+  reason,
+  details,
+});
+
+/**
  * Returns a redux action with type SUBSCRIBED and the given subscription object and it's topic
  * @function subscribed
  * @memberof redux-autobahn:middleware
  * @param {object} subscription - The subscription object for the topic that was subscribed to.
  * @return {object} redux action
  */
-const subscribed = subscription => ({
+const subscribed = (subscription) => ({
   type: types.SUBSCRIBED,
   topic: subscription.topic,
   subscription,
@@ -66,7 +80,7 @@ const subscribed = subscription => ({
  * @param {object} error - The error that occurred while subscribing.
  * @return {object} redux action
  */
-const subscribeError = error => ({
+const subscribeError = (error) => ({
   type: types.SUBSCRIBE_ERROR,
   error,
 });
@@ -78,7 +92,7 @@ const subscribeError = error => ({
  * @param {object} subscription - The subscription object for the topic that was unsubscribed from.
  * @return {object} redux action
  */
-const unsubscribed = subscription => ({
+const unsubscribed = (subscription) => ({
   type: types.UNSUBSCRIBED,
   topic: subscription.topic,
   subscription,
@@ -91,7 +105,7 @@ const unsubscribed = subscription => ({
  * @param {object} error - The error that occurred while unsubscribing.
  * @return {object} redux action
  */
-const unsubscribeError = error => ({
+const unsubscribeError = (error) => ({
   type: types.UNSUBSCRIBE_ERROR,
   error,
 });
@@ -124,7 +138,7 @@ const published = (publication, topic, args, kwargs, options) => ({
  * @param {object} error - The error that occurred while publishing.
  * @return {object} redux action
  */
-const publishError = error => ({
+const publishError = (error) => ({
   type: types.PUBLISH_ERROR,
   error,
 });
@@ -154,7 +168,7 @@ const event = (topic, args, kwargs, details) => ({
  * @param {object} registration - The registration object being registered to.
  * @return {object} redux action
  */
-const registered = registration => ({
+const registered = (registration) => ({
   type: types.REGISTERED,
   registration,
 });
@@ -166,7 +180,7 @@ const registered = registration => ({
  * @param {object} error - The error that occurred while registering.
  * @return {object} redux action
  */
-const registerError = error => ({
+const registerError = (error) => ({
   type: types.REGISTER_ERROR,
   error,
 });
@@ -178,7 +192,7 @@ const registerError = error => ({
  * @param {object} registration - The registration object being unregistered from.
  * @return {object} redux action
  */
-const unregistered = registration => ({
+const unregistered = (registration) => ({
   type: types.UNREGISTERED,
   registration,
 });
@@ -190,7 +204,7 @@ const unregistered = registration => ({
  * @param {object} error - The error that occurred while unregistering.
  * @return {object} redux action
  */
-const unregisterError = error => ({
+const unregisterError = (error) => ({
   type: types.UNREGISTER_ERROR,
   error,
 });
@@ -202,7 +216,7 @@ const unregisterError = error => ({
  * @param {object} error - The error that occurred while calling.
  * @return {object} redux action
  */
-const callError = error => ({
+const callError = (error) => ({
   type: types.CALL_ERROR,
   error,
 });
@@ -211,12 +225,20 @@ const callError = error => ({
  * Returns a redux action with type RESULT and the given result value
  * @function result
  * @memberof redux-autobahn:middleware
- * @param {object} value - The value of the result
+ * @param {object} procedure - Procedure that was called
+ * @param {object} args - Arguments with which procedure was called
+ * @param {object} kwargs - Arguments with which procedure was called
+ * @param {object} results - Call results
+ * @param {object} options - Options
  * @return {object} redux action
  */
-const result = value => ({
+const result = (procedure, args, kwargs, results, options) => ({
   type: types.RESULT,
-  result: value,
+  procedure,
+  args,
+  kwargs,
+  results,
+  options,
 });
 
 /**
@@ -226,7 +248,7 @@ const result = value => ({
  * @param  {object} connection  the connection object
  * @return {boolean}         returns true if the session for the connection exists and is open
  */
-const isConnected = connection => connection && connection.isOpen;
+const isConnected = (connection) => connection && connection.isOpen;
 
 /**
  * Returns the subscription from the action
@@ -235,7 +257,7 @@ const isConnected = connection => connection && connection.isOpen;
  * @param  {object} action  the redux action
  * @return {object}         the subscription on the action
  */
-const getSubscription = action => action.subscription;
+const getSubscription = (action) => action.subscription;
 
 /**
  * Dispatches actions based on action types
@@ -277,10 +299,10 @@ const handleAction = (connection, dispatch, next, action) => {
       return !isConnected(connection) ? dispatch(disconnected())
         : connection.session.publish(action.topic, action.args, action.kwargs,
           { ...action.options, acknowledge: true }).then((pub) => {
-          dispatch(published(pub, action.topic, action.args, action.kwargs, action.options));
-        }, (err) => {
-          dispatch(publishError(err));
-        });
+            dispatch(published(pub, action.topic, action.args, action.kwargs, action.options));
+          }, (err) => {
+            dispatch(publishError(err));
+          });
 
     case types.REGISTER:
       return !isConnected(connection) ? dispatch(disconnected())
@@ -304,7 +326,7 @@ const handleAction = (connection, dispatch, next, action) => {
           if (action.resultAction) {
             return dispatch(action.resultAction(res));
           }
-          return dispatch(result(res));
+          return dispatch(result(action.procedure, action.args, action.kwargs, res, action.options));
         }, (err) => {
           if (action.errorAction) {
             return dispatch(action.errorAction(err));
@@ -342,8 +364,8 @@ export default function autobahnMiddlewareFactory({ connection } = {}) {
     autobahnMiddleware.setConnection = (newConnection) => {
       assert(
         newConnection &&
-          typeof newConnection.open === 'function' &&
-          typeof newConnection.close === 'function',
+        typeof newConnection.open === 'function' &&
+        typeof newConnection.close === 'function',
         'autobahn.Connection required'
       );
 
@@ -356,8 +378,9 @@ export default function autobahnMiddlewareFactory({ connection } = {}) {
         dispatch(connectionOpened(newConnection));
       };
 
-      newConnection.onclose = () => {
+      newConnection.onclose = (reason, details) => {
         autobahnMiddleware._connection = null;
+        dispatch(onDisconnect(reason, details));
         dispatch(connectionClosed());
       };
 
@@ -379,10 +402,9 @@ export default function autobahnMiddlewareFactory({ connection } = {}) {
 
     if (connection) autobahnMiddleware.setConnection(connection);
 
-    return next => action => {
+    return (next) => (action) => {
       handleAction(autobahnMiddleware._connection, dispatch, next, action);
-    }
+    };
   }
-
   return autobahnMiddleware;
 }
