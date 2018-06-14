@@ -106,11 +106,15 @@ export const unregister = registration => ({
  * @param {Array} args - An array of arguments.
  * @param {object} kwargs - An object of keyword arguments.
  * @param {object} options - An object of options.
- * @param {object} resultAction - (optional) An action to be dispatched on call success.
- * @param {object} errorAction - (optional) An action to be dispatched on call error.
+ * @param {function} resultAction - (optional) An action to be dispatched on call success.
+ * @param {function} errorAction - (optional) An action to be dispatched on call error.
+ * @param {function} progressAction - (optional) An action to be dispatched on call progress.
  * @return {object} redux action
  */
-export const call = (procedure, args, kwargs, options, resultAction, errorAction) => ({
+export const call = (
+  procedure, args, kwargs, options,
+  resultAction, errorAction, progressAction,
+) => ({
   type: types.CALL,
   procedure,
   args,
@@ -118,4 +122,5 @@ export const call = (procedure, args, kwargs, options, resultAction, errorAction
   options,
   resultAction,
   errorAction,
+  progressAction,
 });
