@@ -293,7 +293,7 @@ var result = function result(procedure, args, kwargs, results, options) {
  */
 var progress = function progress(procedure, args, kwargs, results, options) {
   return {
-    type: types.PRGRESS,
+    type: types.PROGRESS,
     procedure: procedure,
     args: args,
     kwargs: kwargs,
