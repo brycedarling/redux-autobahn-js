@@ -244,7 +244,7 @@ const result = (procedure, args, kwargs, results, options) => ({
  * @return {object} redux action
  */
 const progress = (procedure, args, kwargs, results, options) => ({
-  type: types.PRGRESS,
+  type: types.PROGRESS,
   procedure,
   args,
   kwargs,
