@@ -7,7 +7,7 @@
   "author": "Bryce Darling",
   "license": "WTFPL",
   "dependencies": {
-    "autobahn": "^17.5.2",
+    "autobahn": "^18.3.2",
     "redux": "^3.7.2"
   },
   "devDependencies": {
