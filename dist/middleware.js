@@ -394,46 +394,11 @@ function autobahnMiddlewareFactory() {
   function autobahnMiddleware(_ref2) {
     var dispatch = _ref2.dispatch;
 
-    /**
-     * Sets the passed connection for the middleware that dispatches opened and closed connection actions and handles actions
-     * @function setConnection
-     * @memberof redux-autobahn:middleware
-     * @param  {Connection} newConnection  the connection object
-     */
-    autobahnMiddleware.setConnection = function (newConnection) {
-      assert(newConnection && typeof newConnection.open === 'function' && typeof newConnection.close === 'function', 'autobahn.Connection required');
-
-      if (autobahnMiddleware._connection) {
-        // close the existing connection
-        autobahnMiddleware.closeConnection('newConnection', 'new connection has been set');
-      }
-
-      newConnection.onopen = function (s) {
-        dispatch(connectionOpened(newConnection));
-      };
-
-      newConnection.onclose = function (reason, details) {
-        autobahnMiddleware._connection = null;
-        dispatch(connectionClosed(reason, details));
-      };
-
-      autobahnMiddleware._connection = newConnection;
-    };
-
-    /**
-     * Closes the current autobahn connection
-     * @function closeConnection
-     * @memberof redux-autobahn:middleware
-     * @param  {string} reason  (optional) a WAMP URI providing a closing reason to the server side (e.g. 'com.myapp.close.signout'). default is `wamp.goodbye.normal`
-     * @param  {string} message  human-readable closing message
-     */
-    autobahnMiddleware.closeConnection = function (reason, message) {
-      if (isConnected(autobahnMiddleware._connection)) {
-        autobahnMiddleware._connection.close(reason, message);
-      }
-    };
-
-    if (connection) autobahnMiddleware.setConnection(connection);
+    autobahnMiddleware._dispatch = dispatch;
+    if (connection) {
+      autobahnMiddleware.setConnection(connection);
+      connection.open();
+    }
 
     return function (next) {
       return function (action) {
@@ -441,5 +406,45 @@ function autobahnMiddlewareFactory() {
       };
     };
   }
+
+  /**
+   * Sets the passed connection for the middleware that dispatches opened and closed connection actions and handles actions
+   * @function setConnection
+   * @memberof redux-autobahn:middleware
+   * @param  {Connection} newConnection  the connection object
+   */
+  autobahnMiddleware.setConnection = function (newConnection) {
+    assert(newConnection && typeof newConnection.open === 'function' && typeof newConnection.close === 'function', 'autobahn.Connection required');
+
+    if (autobahnMiddleware._connection) {
+      // close the existing connection
+      autobahnMiddleware.closeConnection('newConnection', 'new connection has been set');
+    }
+
+    newConnection.onopen = function (s) {
+      autobahnMiddleware._dispatch(connectionOpened(newConnection));
+    };
+
+    newConnection.onclose = function (reason, details) {
+      autobahnMiddleware._connection = null;
+      autobahnMiddleware._dispatch(connectionClosed(reason, details));
+    };
+
+    autobahnMiddleware._connection = newConnection;
+  };
+
+  /**
+   * Closes the current autobahn connection
+   * @function closeConnection
+   * @memberof redux-autobahn:middleware
+   * @param  {string} reason  (optional) a WAMP URI providing a closing reason to the server side (e.g. 'com.myapp.close.signout'). default is `wamp.goodbye.normal`
+   * @param  {string} message  human-readable closing message
+   */
+  autobahnMiddleware.closeConnection = function (reason, message) {
+    if (isConnected(autobahnMiddleware._connection)) {
+      autobahnMiddleware._connection.close(reason, message);
+    }
+  };
+
   return autobahnMiddleware;
 }
