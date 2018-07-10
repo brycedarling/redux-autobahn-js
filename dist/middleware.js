@@ -426,7 +426,6 @@ function autobahnMiddlewareFactory() {
     };
 
     newConnection.onclose = function (reason, details) {
-      autobahnMiddleware._connection = null;
       autobahnMiddleware._dispatch(connectionClosed(reason, details));
     };
 
@@ -444,6 +443,7 @@ function autobahnMiddlewareFactory() {
     if (isConnected(autobahnMiddleware._connection)) {
       autobahnMiddleware._connection.close(reason, message);
     }
+    autobahnMiddleware._connection = null;
   };
 
   return autobahnMiddleware;
