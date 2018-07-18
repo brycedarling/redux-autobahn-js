@@ -232,6 +232,28 @@ const result = (procedure, args, kwargs, results, options) => ({
 });
 
 /**
+ * Returns a redux action with type PROGRESS and the given progress value
+ * Depends on {receive_progress:true} passed as option to CALL action.
+ * @function progress
+ * @memberof redux-autobahn:middleware
+ * @param {object} procedure - Procedure that was called
+ * @param {object} args - Arguments with which procedure was called
+ * @param {object} kwargs - Arguments with which procedure was called
+ * @param {object} results - Call progress results
+ * @param {object} options - Options
+ * @return {object} redux action
+ */
+const progress = (procedure, args, kwargs, results, options) => ({
+  type: types.PROGRESS,
+  procedure,
+  args,
+  kwargs,
+  results,
+  options,
+});
+
+
+/**
  * Returns a boolean that represents if the session for the connection exists and is open, therefore it is connected
  * @function isConnected
  * @memberof redux-autobahn:middleware
@@ -310,9 +332,14 @@ const handleAction = (connection, dispatch, next, action) => {
           dispatch(unregisterError(err));
         });
 
-    case types.CALL:
+    case types.CALL: {
+      let { receive_progress } = action.options;
+      if (action.progressAction && receive_progress !== false) {
+        receive_progress = true;
+      }
       return !isConnected(connection) ? dispatch(disconnected())
-        : connection.session.call(action.procedure, action.args, action.kwargs, action.options).then((res) => {
+        : connection.session.call(action.procedure, action.args, action.kwargs,
+          { ...action.options, receive_progress }).then((res) => {
           if (action.resultAction) {
             return dispatch(action.resultAction(res));
           }
@@ -322,8 +349,13 @@ const handleAction = (connection, dispatch, next, action) => {
             return dispatch(action.errorAction(err));
           }
           return dispatch(callError(err));
+        }, (val) => {
+          if (action.progressAction) {
+            return dispatch(action.progressAction(val));
+          }
+          return dispatch(progress(action.procedure, action.args, action.kwargs, val, action.options));
         });
-
+    }
     default:
       return next(action);
   }

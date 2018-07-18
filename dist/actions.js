@@ -129,11 +129,12 @@ var unregister = exports.unregister = function unregister(registration) {
  * @param {Array} args - An array of arguments.
  * @param {object} kwargs - An object of keyword arguments.
  * @param {object} options - An object of options.
- * @param {object} resultAction - (optional) An action to be dispatched on call success.
- * @param {object} errorAction - (optional) An action to be dispatched on call error.
+ * @param {function} resultAction - (optional) An action to be dispatched on call success.
+ * @param {function} errorAction - (optional) An action to be dispatched on call error.
+ * @param {function} progressAction - (optional) An action to be dispatched on call progress.
  * @return {object} redux action
  */
-var call = exports.call = function call(procedure, args, kwargs, options, resultAction, errorAction) {
+var call = exports.call = function call(procedure, args, kwargs, options, resultAction, errorAction, progressAction) {
   return {
     type: types.CALL,
     procedure: procedure,
@@ -141,6 +142,7 @@ var call = exports.call = function call(procedure, args, kwargs, options, result
     kwargs: kwargs,
     options: options,
     resultAction: resultAction,
-    errorAction: errorAction
+    errorAction: errorAction,
+    progressAction: progressAction
   };
 };

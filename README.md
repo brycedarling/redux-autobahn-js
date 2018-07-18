@@ -26,7 +26,7 @@
     * [.publish(topic, args, kwargs, options)](#redux-autobahn_actions.publish) ⇒ <code>object</code>
     * [.register(procedure, endpoint, options)](#redux-autobahn_actions.register) ⇒ <code>object</code>
     * [.unregister(registration)](#redux-autobahn_actions.unregister) ⇒ <code>object</code>
-    * [.call(procedure, args, kwargs, options, resultAction, errorAction)](#redux-autobahn_actions.call) ⇒ <code>object</code>
+    * [.call(procedure, args, kwargs, options, resultAction, errorAction, progressAction)](#redux-autobahn_actions.call) ⇒ <code>object</code>
 
 <a name="redux-autobahn_actions.openConnection"></a>
 
@@ -109,7 +109,7 @@ Returns a redux action with type UNREGISTER and the given registration object
 
 <a name="redux-autobahn_actions.call"></a>
 
-### redux-autobahn:actions.call(procedure, args, kwargs, options, resultAction, errorAction) ⇒ <code>object</code>
+### redux-autobahn:actions.call(procedure, args, kwargs, options, resultAction, errorAction, progressAction) ⇒ <code>object</code>
 Returns a redux action with type CALL and the given procedure, args, kwargs, and options
 
 **Kind**: static method of [<code>redux-autobahn:actions</code>](#redux-autobahn_actions)  
@@ -121,8 +121,9 @@ Returns a redux action with type CALL and the given procedure, args, kwargs, and
 | args | <code>Array</code> | An array of arguments. |
 | kwargs | <code>object</code> | An object of keyword arguments. |
 | options | <code>object</code> | An object of options. |
-| resultAction | <code>object</code> | (optional) An action to be dispatched on call success. |
-| errorAction | <code>object</code> | (optional) An action to be dispatched on call error. |
+| resultAction | <code>function</code> | (optional) An action to be dispatched on call success. |
+| errorAction | <code>function</code> | (optional) An action to be dispatched on call error. |
+| progressAction | <code>function</code> | (optional) An action to be dispatched on call progress. |
 
 <a name="redux-autobahn_middleware"></a>
 
@@ -147,6 +148,7 @@ Returns a redux action with type CALL and the given procedure, args, kwargs, and
     * [.unregisterError(error)](#redux-autobahn_middleware.unregisterError) ⇒ <code>object</code>
     * [.callError(error)](#redux-autobahn_middleware.callError) ⇒ <code>object</code>
     * [.result(procedure, args, kwargs, results, options)](#redux-autobahn_middleware.result) ⇒ <code>object</code>
+    * [.progress(procedure, args, kwargs, results, options)](#redux-autobahn_middleware.progress) ⇒ <code>object</code>
     * [.isConnected(connection)](#redux-autobahn_middleware.isConnected) ⇒ <code>boolean</code>
     * [.getSubscription(action)](#redux-autobahn_middleware.getSubscription) ⇒ <code>object</code>
     * [.handleAction(connection, dispatch, next, action)](#redux-autobahn_middleware.handleAction)
@@ -361,6 +363,23 @@ Returns a redux action with type RESULT and the given result value
 | results | <code>object</code> | Call results |
 | options | <code>object</code> | Options |
 
+<a name="redux-autobahn_middleware.progress"></a>
+
+### redux-autobahn:middleware.progress(procedure, args, kwargs, results, options) ⇒ <code>object</code>
+Returns a redux action with type PROGRESS and the given progress value
+Depends on {receive_progress:true} passed as option to CALL action.
+
+**Kind**: static method of [<code>redux-autobahn:middleware</code>](#redux-autobahn_middleware)  
+**Returns**: <code>object</code> - redux action  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| procedure | <code>object</code> | Procedure that was called |
+| args | <code>object</code> | Arguments with which procedure was called |
+| kwargs | <code>object</code> | Arguments with which procedure was called |
+| results | <code>object</code> | Call progress results |
+| options | <code>object</code> | Options |
+
 <a name="redux-autobahn_middleware.isConnected"></a>
 
 ### redux-autobahn:middleware.isConnected(connection) ⇒ <code>boolean</code>
@@ -524,6 +543,7 @@ Closes the current autobahn connection
     * [.CALL](#redux-autobahn_types.CALL) : <code>string</code>
     * [.CALL_ERROR](#redux-autobahn_types.CALL_ERROR) : <code>string</code>
     * [.RESULT](#redux-autobahn_types.RESULT) : <code>string</code>
+    * [.PROGRESS](#redux-autobahn_types.PROGRESS) : <code>string</code>
 
 <a name="redux-autobahn_types.CONNECTED"></a>
 
@@ -624,4 +644,8 @@ Closes the current autobahn connection
 <a name="redux-autobahn_types.RESULT"></a>
 
 ### redux-autobahn:types.RESULT : <code>string</code>
+**Kind**: static constant of [<code>redux-autobahn:types</code>](#redux-autobahn_types)  
+<a name="redux-autobahn_types.PROGRESS"></a>
+
+### redux-autobahn:types.PROGRESS : <code>string</code>
 **Kind**: static constant of [<code>redux-autobahn:types</code>](#redux-autobahn_types)  

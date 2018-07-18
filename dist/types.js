@@ -156,3 +156,9 @@ var CALL_ERROR = exports.CALL_ERROR = 'autobahn/CALL_ERROR';
  * @memberof redux-autobahn:types
  */
 var RESULT = exports.RESULT = 'autobahn/RESULT';
+
+/**
+ * @constant {string}
+ * @memberof redux-autobahn:types
+ */
+var PROGRESS = exports.PROGRESS = 'autobahn/PROGRESS';
