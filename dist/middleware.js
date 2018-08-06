@@ -366,6 +366,11 @@ var handleAction = function handleAction(connection, dispatch, next, action) {
           return dispatch(action.errorAction(err));
         }
         return dispatch(callError(err));
+      }, function (progress) {
+        if (action.progressAction) {
+          return dispatch(action.progressAction(progress));
+        }
+        return dispatch(callError(progress));
       });
 
     default:

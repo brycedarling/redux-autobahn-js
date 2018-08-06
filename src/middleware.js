@@ -322,6 +322,11 @@ const handleAction = (connection, dispatch, next, action) => {
             return dispatch(action.errorAction(err));
           }
           return dispatch(callError(err));
+        }, (progress) => {
+          if (action.progressAction) {
+            return dispatch(action.progressAction(progress));
+          }
+          return dispatch(callError(progress));
         });
 
     default:
