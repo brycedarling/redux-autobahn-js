@@ -34,6 +34,14 @@ class App extends Component {
     return !isSubscribed(this.props, topic) && isSubscribed(newProps, topic);
   }
 
+  unsubscribe = () => {
+    // unsubscribe by string should work
+    // this.props.actions.unsubscribe('com.example.test.subscription');
+    this.props.actions.unsubscribe(
+      this.props.autobahnConnection.subscriptions[0]
+    );
+  };
+
   connect = () => {
     store.setAutobahnConnection(
       new Connection({
@@ -72,10 +80,17 @@ class App extends Component {
         </div>
         <div>
           <button
-            disabled={!this.props.connected}
+            disabled={!this.props.connected || !this.props.subscription}
             onClick={e => this.publishToSubscription()}
           >
             Publish to Subscription
+          </button>
+          <br />
+          <button
+            disabled={!this.props.connected || !this.props.subscription}
+            onClick={e => this.unsubscribe()}
+          >
+            Unsubscribe
           </button>
         </div>
         <div>
@@ -108,7 +123,8 @@ const mapStateToProps = state => ({
   autobahnConnection: state.autobahnConnection,
   message: state.originalReducer.message,
   connected: state.originalReducer.connected,
-  method: state.originalReducer.method
+  method: state.originalReducer.method,
+  subscription: state.originalReducer.subscription
 });
 
 export default connect(

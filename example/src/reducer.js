@@ -4,7 +4,7 @@ import { combineReducers } from 'redux';
 const initialState = {
   connected: false,
   method: false,
-  subscription: '',
+  subscription: false,
   message: ''
 };
 
@@ -22,6 +22,13 @@ const originalReducer = (state = initialState, action) => {
         ...state,
         subscription: action.topic,
         message: `Subcribed to ${action.topic}`
+      };
+
+    case 'autobahn/UNSUBSCRIBED':
+      return {
+        ...state,
+        subscription: false,
+        message: `Unsubcribed from ${action.topic}`
       };
 
     case 'autobahn/PUBLISHED':

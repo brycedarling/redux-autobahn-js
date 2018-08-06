@@ -16,7 +16,7 @@
   "scripts": {
     "start": "npm-run-all -p wamp-server react-start",
     "wamp-server": "babel-node wampserver",
-    "react-start": "react-scripts start",
+    "react-start": "PORT=3002 react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
