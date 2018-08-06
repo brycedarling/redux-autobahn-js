@@ -26,7 +26,7 @@
     * [.publish(topic, args, kwargs, options)](#redux-autobahn_actions.publish) ⇒ <code>object</code>
     * [.register(procedure, endpoint, options)](#redux-autobahn_actions.register) ⇒ <code>object</code>
     * [.unregister(registration)](#redux-autobahn_actions.unregister) ⇒ <code>object</code>
-    * [.call(procedure, args, kwargs, options)](#redux-autobahn_actions.call) ⇒ <code>object</code>
+    * [.call(procedure, args, kwargs, options, resultAction, errorAction)](#redux-autobahn_actions.call) ⇒ <code>object</code>
 
 <a name="redux-autobahn_actions.openConnection"></a>
 
@@ -109,7 +109,7 @@ Returns a redux action with type UNREGISTER and the given registration object
 
 <a name="redux-autobahn_actions.call"></a>
 
-### redux-autobahn:actions.call(procedure, args, kwargs, options) ⇒ <code>object</code>
+### redux-autobahn:actions.call(procedure, args, kwargs, options, resultAction, errorAction) ⇒ <code>object</code>
 Returns a redux action with type CALL and the given procedure, args, kwargs, and options
 
 **Kind**: static method of [<code>redux-autobahn:actions</code>](#redux-autobahn_actions)  
@@ -121,6 +121,8 @@ Returns a redux action with type CALL and the given procedure, args, kwargs, and
 | args | <code>Array</code> | An array of arguments. |
 | kwargs | <code>object</code> | An object of keyword arguments. |
 | options | <code>object</code> | An object of options. |
+| resultAction | <code>object</code> | (optional) An action to be dispatched on call success. |
+| errorAction | <code>object</code> | (optional) An action to be dispatched on call error. |
 
 <a name="redux-autobahn_middleware"></a>
 
@@ -130,8 +132,8 @@ Returns a redux action with type CALL and the given procedure, args, kwargs, and
 * [redux-autobahn:middleware](#redux-autobahn_middleware) : <code>object</code>
     * [.connected()](#redux-autobahn_middleware.connected) ⇒ <code>object</code>
     * [.disconnected()](#redux-autobahn_middleware.disconnected) ⇒ <code>object</code>
-    * [.connectionOpened(session)](#redux-autobahn_middleware.connectionOpened) ⇒ <code>object</code>
-    * [.connectionClosed()](#redux-autobahn_middleware.connectionClosed) ⇒ <code>object</code>
+    * [.connectionOpened(connection)](#redux-autobahn_middleware.connectionOpened) ⇒ <code>object</code>
+    * [.connectionClosed(reason, details)](#redux-autobahn_middleware.connectionClosed) ⇒ <code>object</code>
     * [.subscribed(subscription)](#redux-autobahn_middleware.subscribed) ⇒ <code>object</code>
     * [.subscribeError(error)](#redux-autobahn_middleware.subscribeError) ⇒ <code>object</code>
     * [.unsubscribed(subscription)](#redux-autobahn_middleware.unsubscribed) ⇒ <code>object</code>
@@ -144,12 +146,13 @@ Returns a redux action with type CALL and the given procedure, args, kwargs, and
     * [.unregistered(registration)](#redux-autobahn_middleware.unregistered) ⇒ <code>object</code>
     * [.unregisterError(error)](#redux-autobahn_middleware.unregisterError) ⇒ <code>object</code>
     * [.callError(error)](#redux-autobahn_middleware.callError) ⇒ <code>object</code>
-    * [.result(value)](#redux-autobahn_middleware.result) ⇒ <code>object</code>
-    * [.isConnected(session)](#redux-autobahn_middleware.isConnected) ⇒ <code>boolean</code>
+    * [.result(procedure, args, kwargs, results, options)](#redux-autobahn_middleware.result) ⇒ <code>object</code>
+    * [.isConnected(connection)](#redux-autobahn_middleware.isConnected) ⇒ <code>boolean</code>
     * [.getSubscription(action)](#redux-autobahn_middleware.getSubscription) ⇒ <code>object</code>
-    * [.handleAction(connection, session, dispatch, next, action)](#redux-autobahn_middleware.handleAction)
+    * [.handleAction(connection, dispatch, next, action)](#redux-autobahn_middleware.handleAction)
     * [.assert(assertion, message)](#redux-autobahn_middleware.assert)
-    * [.createMiddleware(connection)](#redux-autobahn_middleware.createMiddleware)
+    * [.setConnection(newConnection)](#redux-autobahn_middleware.setConnection)
+    * [.closeConnection(reason, message)](#redux-autobahn_middleware.closeConnection)
 
 <a name="redux-autobahn_middleware.connected"></a>
 
@@ -167,7 +170,7 @@ Returns a redux action with type DISCONNECTED
 **Returns**: <code>object</code> - redux action  
 <a name="redux-autobahn_middleware.connectionOpened"></a>
 
-### redux-autobahn:middleware.connectionOpened(session) ⇒ <code>object</code>
+### redux-autobahn:middleware.connectionOpened(connection) ⇒ <code>object</code>
 Returns a redux action with type CONNECTION_OPENED and the given session object
 
 **Kind**: static method of [<code>redux-autobahn:middleware</code>](#redux-autobahn_middleware)  
@@ -175,15 +178,21 @@ Returns a redux action with type CONNECTION_OPENED and the given session object
 
 | Param | Type | Description |
 | --- | --- | --- |
-| session | <code>object</code> | The session object for the opened connection. |
+| connection | <code>object</code> | The object for the opened connection. |
 
 <a name="redux-autobahn_middleware.connectionClosed"></a>
 
-### redux-autobahn:middleware.connectionClosed() ⇒ <code>object</code>
+### redux-autobahn:middleware.connectionClosed(reason, details) ⇒ <code>object</code>
 Returns a redux action with type CONNECTION_CLOSED
 
 **Kind**: static method of [<code>redux-autobahn:middleware</code>](#redux-autobahn_middleware)  
 **Returns**: <code>object</code> - redux action  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| reason | <code>string</code> | reason for disconnection |
+| details | <code>object</code> | disconnect details |
+
 <a name="redux-autobahn_middleware.subscribed"></a>
 
 ### redux-autobahn:middleware.subscribed(subscription) ⇒ <code>object</code>
@@ -338,7 +347,7 @@ Returns a redux action with type CALL_ERROR and the given call error object
 
 <a name="redux-autobahn_middleware.result"></a>
 
-### redux-autobahn:middleware.result(value) ⇒ <code>object</code>
+### redux-autobahn:middleware.result(procedure, args, kwargs, results, options) ⇒ <code>object</code>
 Returns a redux action with type RESULT and the given result value
 
 **Kind**: static method of [<code>redux-autobahn:middleware</code>](#redux-autobahn_middleware)  
@@ -346,19 +355,23 @@ Returns a redux action with type RESULT and the given result value
 
 | Param | Type | Description |
 | --- | --- | --- |
-| value | <code>object</code> | The value of the result |
+| procedure | <code>object</code> | Procedure that was called |
+| args | <code>object</code> | Arguments with which procedure was called |
+| kwargs | <code>object</code> | Arguments with which procedure was called |
+| results | <code>object</code> | Call results |
+| options | <code>object</code> | Options |
 
 <a name="redux-autobahn_middleware.isConnected"></a>
 
-### redux-autobahn:middleware.isConnected(session) ⇒ <code>boolean</code>
-Returns a boolean that represents if the session exists and is open, therefore it is connected
+### redux-autobahn:middleware.isConnected(connection) ⇒ <code>boolean</code>
+Returns a boolean that represents if the session for the connection exists and is open, therefore it is connected
 
 **Kind**: static method of [<code>redux-autobahn:middleware</code>](#redux-autobahn_middleware)  
-**Returns**: <code>boolean</code> - returns true if the session exists and is open  
+**Returns**: <code>boolean</code> - returns true if the session for the connection exists and is open  
 
 | Param | Type | Description |
 | --- | --- | --- |
-| session | <code>object</code> | the session object |
+| connection | <code>object</code> | the connection object |
 
 <a name="redux-autobahn_middleware.getSubscription"></a>
 
@@ -374,7 +387,7 @@ Returns the subscription from the action
 
 <a name="redux-autobahn_middleware.handleAction"></a>
 
-### redux-autobahn:middleware.handleAction(connection, session, dispatch, next, action)
+### redux-autobahn:middleware.handleAction(connection, dispatch, next, action)
 Dispatches actions based on action types
 
 **Kind**: static method of [<code>redux-autobahn:middleware</code>](#redux-autobahn_middleware)  
@@ -382,7 +395,6 @@ Dispatches actions based on action types
 | Param | Type | Description |
 | --- | --- | --- |
 | connection | <code>object</code> | the connection object |
-| session | <code>object</code> | the session object |
 | dispatch | <code>function</code> | the dispatch function |
 | next | <code>function</code> | the next function |
 | action | <code>object</code> | the redux action |
@@ -403,16 +415,28 @@ Throws an error if the assertion is falsy
 | assertion | <code>object</code> | the assertion expression |
 | message | <code>object</code> | the assertion message |
 
-<a name="redux-autobahn_middleware.createMiddleware"></a>
+<a name="redux-autobahn_middleware.setConnection"></a>
 
-### redux-autobahn:middleware.createMiddleware(connection)
-Creates the middleware that dispatches opened and closed connection actions and handles actions
+### redux-autobahn:middleware.setConnection(newConnection)
+Sets the passed connection for the middleware that dispatches opened and closed connection actions and handles actions
 
 **Kind**: static method of [<code>redux-autobahn:middleware</code>](#redux-autobahn_middleware)  
 
 | Param | Type | Description |
 | --- | --- | --- |
-| connection | <code>Connection</code> | the connection object |
+| newConnection | <code>Connection</code> | the connection object |
+
+<a name="redux-autobahn_middleware.closeConnection"></a>
+
+### redux-autobahn:middleware.closeConnection(reason, message)
+Closes the current autobahn connection
+
+**Kind**: static method of [<code>redux-autobahn:middleware</code>](#redux-autobahn_middleware)  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| reason | <code>string</code> | (optional) a WAMP URI providing a closing reason to the server side (e.g. 'com.myapp.close.signout'). default is `wamp.goodbye.normal` |
+| message | <code>string</code> | human-readable closing message |
 
 <a name="redux-autobahn_reducer"></a>
 

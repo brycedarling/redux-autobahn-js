@@ -221,14 +221,13 @@ asynckit@^0.4.0:
   version "0.4.0"
   resolved "https://registry.yarnpkg.com/asynckit/-/asynckit-0.4.0.tgz#c79ed97f7f34cb8f2ba1bc9790bcc366474b4b79"
 
-autobahn@^17.5.2:
-  version "17.5.2"
-  resolved "https://registry.yarnpkg.com/autobahn/-/autobahn-17.5.2.tgz#e448345d87b4d945bd6feb97bd53ba927a7569ad"
+autobahn@^18.3.2:
+  version "18.3.2"
+  resolved "https://registry.yarnpkg.com/autobahn/-/autobahn-18.3.2.tgz#b9666b3b223abdd80f0767441eefd127623725cb"
   dependencies:
     cbor ">= 3.0.0"
     crypto-js ">= 3.1.8"
-    int64-buffer ">= 0.1.9"
-    msgpack-lite ">= 0.1.26"
+    msgpack5 ">= 3.6.0"
     tweetnacl ">= 0.14.3"
     when ">= 3.7.7"
     ws ">= 1.1.4"
@@ -869,6 +868,13 @@ bl@^1.0.0:
   dependencies:
     readable-stream "^2.0.5"
 
+bl@^2.0.0:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/bl/-/bl-2.0.1.tgz#1de8346d50c3078d088d6a60c2bbc8c516248bc5"
+  dependencies:
+    readable-stream "^2.3.5"
+    safe-buffer "^5.1.1"
+
 block-stream@*:
   version "0.0.9"
   resolved "https://registry.yarnpkg.com/block-stream/-/block-stream-0.0.9.tgz#13ebfe778a03205cfe03751481ebb4b3300c126a"
@@ -1470,10 +1476,6 @@ esutils@^2.0.2:
   version "2.0.2"
   resolved "https://registry.yarnpkg.com/esutils/-/esutils-2.0.2.tgz#0abf4f1caa5bcb1f7a9d8acc6dea4faaa04bac9b"
 
-event-lite@^0.1.1:
-  version "0.1.1"
-  resolved "https://registry.yarnpkg.com/event-lite/-/event-lite-0.1.1.tgz#47cf08a8d37d0b694cdb7b3b17b51faac6576086"
-
 exec-sh@^0.2.0:
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/exec-sh/-/exec-sh-0.2.0.tgz#14f75de3f20d286ef933099b2ce50a90359cef10"
@@ -1852,10 +1854,6 @@ iconv-lite@^0.4.17:
   version "0.4.18"
   resolved "https://registry.yarnpkg.com/iconv-lite/-/iconv-lite-0.4.18.tgz#23d8656b16aae6742ac29732ea8f0336a4789cf2"
 
-ieee754@^1.1.8:
-  version "1.1.8"
-  resolved "https://registry.yarnpkg.com/ieee754/-/ieee754-1.1.8.tgz#be33d40ac10ef1926701f6f08a2d86fbfd1ad3e4"
-
 ignore@^3.3.3:
   version "3.3.5"
   resolved "https://registry.yarnpkg.com/ignore/-/ignore-3.3.5.tgz#c4e715455f6073a8d7e5dae72d2fc9d71663dba6"
@@ -1897,10 +1895,6 @@ inquirer@^3.0.6:
     string-width "^2.1.0"
     strip-ansi "^4.0.0"
     through "^2.3.6"
-
-"int64-buffer@>= 0.1.9", int64-buffer@^0.1.9:
-  version "0.1.9"
-  resolved "https://registry.yarnpkg.com/int64-buffer/-/int64-buffer-0.1.9.tgz#9e039da043b24f78b196b283e04653ef5e990f61"
 
 invariant@^2.2.2:
   version "2.2.2"
@@ -2665,14 +2659,14 @@ ms@2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/ms/-/ms-2.0.0.tgz#5608aeadfc00be6c2901df5f9861788de0d597c8"
 
-"msgpack-lite@>= 0.1.26":
-  version "0.1.26"
-  resolved "https://registry.yarnpkg.com/msgpack-lite/-/msgpack-lite-0.1.26.tgz#dd3c50b26f059f25e7edee3644418358e2a9ad89"
+"msgpack5@>= 3.6.0":
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/msgpack5/-/msgpack5-4.2.0.tgz#e005ec893b71e1140bb177f2d1f4b7f290169611"
   dependencies:
-    event-lite "^0.1.1"
-    ieee754 "^1.1.8"
-    int64-buffer "^0.1.9"
-    isarray "^1.0.0"
+    bl "^2.0.0"
+    inherits "^2.0.3"
+    readable-stream "^2.3.6"
+    safe-buffer "^5.1.2"
 
 mute-stream@0.0.7:
   version "0.0.7"
@@ -2995,6 +2989,10 @@ process-nextick-args@~1.0.6:
   version "1.0.7"
   resolved "https://registry.yarnpkg.com/process-nextick-args/-/process-nextick-args-1.0.7.tgz#150e20b756590ad3f91093f25a4f2ad8bff30ba3"
 
+process-nextick-args@~2.0.0:
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/process-nextick-args/-/process-nextick-args-2.0.0.tgz#a37d732f4271b4ab1ad070d35508e8290788ffaa"
+
 progress@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/progress/-/progress-2.0.0.tgz#8a1be366bf8fc23db2bd23f10c6fe920b4389d1f"
@@ -3078,6 +3076,18 @@ readable-stream@^2.0.0, readable-stream@^2.0.2, readable-stream@^2.0.5, readable
     process-nextick-args "~1.0.6"
     safe-buffer "~5.1.1"
     string_decoder "~1.0.3"
+    util-deprecate "~1.0.1"
+
+readable-stream@^2.3.5, readable-stream@^2.3.6:
+  version "2.3.6"
+  resolved "https://registry.yarnpkg.com/readable-stream/-/readable-stream-2.3.6.tgz#b11c27d88b8ff1fbe070643cf94b0c79ae1b0aaf"
+  dependencies:
+    core-util-is "~1.0.0"
+    inherits "~2.0.3"
+    isarray "~1.0.0"
+    process-nextick-args "~2.0.0"
+    safe-buffer "~5.1.1"
+    string_decoder "~1.1.1"
     util-deprecate "~1.0.1"
 
 readdirp@^2.0.0:
@@ -3291,6 +3301,10 @@ safe-buffer@^5.0.1, safe-buffer@~5.1.0, safe-buffer@~5.1.1:
   version "5.1.1"
   resolved "https://registry.yarnpkg.com/safe-buffer/-/safe-buffer-5.1.1.tgz#893312af69b2123def71f57889001671eeb2c853"
 
+safe-buffer@^5.1.1, safe-buffer@^5.1.2:
+  version "5.1.2"
+  resolved "https://registry.yarnpkg.com/safe-buffer/-/safe-buffer-5.1.2.tgz#991ec69d296e0313747d59bdfd2b745c35f8828d"
+
 sane@~1.6.0:
   version "1.6.0"
   resolved "https://registry.yarnpkg.com/sane/-/sane-1.6.0.tgz#9610c452307a135d29c1fdfe2547034180c46775"
@@ -3465,6 +3479,12 @@ string-width@^2.0.0, string-width@^2.1.0:
 string_decoder@~1.0.3:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/string_decoder/-/string_decoder-1.0.3.tgz#0fc67d7c141825de94282dd536bec6b9bce860ab"
+  dependencies:
+    safe-buffer "~5.1.0"
+
+string_decoder@~1.1.1:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/string_decoder/-/string_decoder-1.1.1.tgz#9cf1611ba62685d7030ae9e4ba34149c3af03fc8"
   dependencies:
     safe-buffer "~5.1.0"
 

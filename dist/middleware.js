@@ -4,12 +4,13 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
-var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; /**
-                                                                                                                                                                                                                                                                   * @namespace redux-autobahn:middleware
-                                                                                                                                                                                                                                                                   */
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; }; /* eslint-disable no-underscore-dangle,no-param-reassign,max-len,no-unused-vars */
+/**
+ * @namespace redux-autobahn:middleware
+ */
 
 
-var _autobahn = require('autobahn');
+exports.default = autobahnMiddlewareFactory;
 
 var _types = require('./types');
 
@@ -45,13 +46,13 @@ var disconnected = function disconnected() {
  * Returns a redux action with type CONNECTION_OPENED and the given session object
  * @function connectionOpened
  * @memberof redux-autobahn:middleware
- * @param {object} session - The session object for the opened connection.
+ * @param {object} connection - The object for the opened connection.
  * @return {object} redux action
  */
-var connectionOpened = function connectionOpened(session) {
+var connectionOpened = function connectionOpened(connection) {
   return {
     type: types.CONNECTION_OPENED,
-    session: session
+    session: connection.session
   };
 };
 
@@ -59,11 +60,15 @@ var connectionOpened = function connectionOpened(session) {
  * Returns a redux action with type CONNECTION_CLOSED
  * @function connectionClosed
  * @memberof redux-autobahn:middleware
+ * @param {string} reason reason for disconnection
+ * @param {object} details disconnect details
  * @return {object} redux action
  */
-var connectionClosed = function connectionClosed() {
+var connectionClosed = function connectionClosed(reason, details) {
   return {
-    type: types.CONNECTION_CLOSED
+    type: types.CONNECTION_CLOSED,
+    reason: reason,
+    details: details
   };
 };
 
@@ -256,25 +261,33 @@ var callError = function callError(error) {
  * Returns a redux action with type RESULT and the given result value
  * @function result
  * @memberof redux-autobahn:middleware
- * @param {object} value - The value of the result
+ * @param {object} procedure - Procedure that was called
+ * @param {object} args - Arguments with which procedure was called
+ * @param {object} kwargs - Arguments with which procedure was called
+ * @param {object} results - Call results
+ * @param {object} options - Options
  * @return {object} redux action
  */
-var result = function result(value) {
+var result = function result(procedure, args, kwargs, results, options) {
   return {
     type: types.RESULT,
-    result: value
+    procedure: procedure,
+    args: args,
+    kwargs: kwargs,
+    results: results,
+    options: options
   };
 };
 
 /**
- * Returns a boolean that represents if the session exists and is open, therefore it is connected
+ * Returns a boolean that represents if the session for the connection exists and is open, therefore it is connected
  * @function isConnected
  * @memberof redux-autobahn:middleware
- * @param  {object} session  the session object
- * @return {boolean}         returns true if the session exists and is open
+ * @param  {object} connection  the connection object
+ * @return {boolean}         returns true if the session for the connection exists and is open
  */
-var isConnected = function isConnected(session) {
-  return session && session.isOpen;
+var isConnected = function isConnected(connection) {
+  return connection && connection.isOpen;
 };
 
 /**
@@ -293,21 +306,20 @@ var getSubscription = function getSubscription(action) {
  * @function handleAction
  * @memberof redux-autobahn:middleware
  * @param  {object} connection  the connection object
- * @param  {object} session     the session object
  * @param  {function} dispatch  the dispatch function
  * @param  {function} next      the next function
  * @param  {object} action      the redux action
  */
-var handleAction = function handleAction(connection, session, dispatch, next, action) {
+var handleAction = function handleAction(connection, dispatch, next, action) {
   switch (action.type) {
     case types.OPEN_CONNECTION:
-      return isConnected(session) ? dispatch(connected()) : connection.open();
+      return isConnected(connection) ? dispatch(connected()) : connection.open();
 
     case types.CLOSE_CONNECTION:
-      return !isConnected(session) ? dispatch(disconnected()) : connection.close();
+      return !isConnected(connection) ? dispatch(disconnected()) : connection.close();
 
     case types.SUBSCRIBE:
-      return !isConnected(session) ? dispatch(disconnected()) : session.subscribe(action.topic, function (args, kwargs, details) {
+      return !isConnected(connection) ? dispatch(disconnected()) : connection.session.subscribe(action.topic, function (args, kwargs, details) {
         dispatch(event(action.topic, args, kwargs, details));
       }).then(function (subscription) {
         dispatch(subscribed(subscription));
@@ -316,38 +328,44 @@ var handleAction = function handleAction(connection, session, dispatch, next, ac
       });
 
     case types.UNSUBSCRIBE:
-      return !isConnected(session) ? dispatch(disconnected()) : session.unsubscribe(getSubscription(action)).then(function (success) {
+      return !isConnected(connection) ? dispatch(disconnected()) : connection.session.unsubscribe(getSubscription(action)).then(function (success) {
         if (success) dispatch(unsubscribed(action.subscription));else unsubscribeError('Failed to unsubscribe');
       }, function (err) {
         dispatch(unsubscribeError(err));
       });
 
     case types.PUBLISH:
-      return !isConnected(session) ? dispatch(disconnected()) : session.publish(action.topic, action.args, action.kwargs, _extends({}, action.options, { acknowledge: true })).then(function (pub) {
+      return !isConnected(connection) ? dispatch(disconnected()) : connection.session.publish(action.topic, action.args, action.kwargs, _extends({}, action.options, { acknowledge: true })).then(function (pub) {
         dispatch(published(pub, action.topic, action.args, action.kwargs, action.options));
       }, function (err) {
         dispatch(publishError(err));
       });
 
     case types.REGISTER:
-      return !isConnected(session) ? dispatch(disconnected()) : session.register(action.procedure, action.endpoint, action.options).then(function (reg) {
+      return !isConnected(connection) ? dispatch(disconnected()) : connection.session.register(action.procedure, action.endpoint, action.options).then(function (reg) {
         dispatch(registered(reg));
       }, function (err) {
         dispatch(registerError(err));
       });
 
     case types.UNREGISTER:
-      return !isConnected(session) ? dispatch(disconnected()) : session.unregister(action.registration).then(function () {
+      return !isConnected(connection) ? dispatch(disconnected()) : connection.session.unregister(action.registration).then(function () {
         dispatch(unregistered(action.registration));
       }, function (err) {
         dispatch(unregisterError(err));
       });
 
     case types.CALL:
-      return !isConnected(session) ? dispatch(disconnected()) : session.call(action.procedure, action.args, action.kwargs, action.options).then(function (res) {
-        dispatch(result(res));
+      return !isConnected(connection) ? dispatch(disconnected()) : connection.session.call(action.procedure, action.args, action.kwargs, action.options).then(function (res) {
+        if (action.resultAction) {
+          return dispatch(action.resultAction(res));
+        }
+        return dispatch(result(action.procedure, action.args, action.kwargs, res, action.options));
       }, function (err) {
-        dispatch(callError(err));
+        if (action.errorAction) {
+          return dispatch(action.errorAction(err));
+        }
+        return dispatch(callError(err));
       });
 
     default:
@@ -369,39 +387,64 @@ var assert = function assert(assertion, message) {
   }
 };
 
-/**
- * Creates the middleware that dispatches opened and closed connection actions and handles actions
- * @function createMiddleware
- * @memberof redux-autobahn:middleware
- * @param  {Connection} connection  the connection object
- */
-var createMiddleware = function createMiddleware(connection) {
-  assert(connection instanceof _autobahn.Connection, 'autobahn.Connection required');
+function autobahnMiddlewareFactory() {
+  var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+      connection = _ref.connection;
 
-  return function (_ref) {
-    var dispatch = _ref.dispatch;
+  function autobahnMiddleware(_ref2) {
+    var dispatch = _ref2.dispatch;
 
-    var session = null;
-
-    /* eslint-disable no-param-reassign */
-    connection.onopen = function (s) {
-      session = s;
-
-      dispatch(connectionOpened(session));
-    };
-
-    connection.onclose = function () {
-      session = null;
-
-      dispatch(connectionClosed());
-    };
+    autobahnMiddleware._dispatch = dispatch;
+    if (connection) {
+      autobahnMiddleware.setConnection(connection);
+      connection.open();
+    }
 
     return function (next) {
       return function (action) {
-        return handleAction(connection, session, dispatch, next, action);
+        handleAction(autobahnMiddleware._connection, dispatch, next, action);
       };
     };
-  };
-};
+  }
 
-exports.default = createMiddleware;
+  /**
+   * Sets the passed connection for the middleware that dispatches opened and closed connection actions and handles actions
+   * @function setConnection
+   * @memberof redux-autobahn:middleware
+   * @param  {Connection} newConnection  the connection object
+   */
+  autobahnMiddleware.setConnection = function (newConnection) {
+    assert(newConnection && typeof newConnection.open === 'function' && typeof newConnection.close === 'function', 'autobahn.Connection required');
+
+    if (autobahnMiddleware._connection) {
+      // close the existing connection
+      autobahnMiddleware.closeConnection('newConnection', 'new connection has been set');
+    }
+
+    newConnection.onopen = function (s) {
+      autobahnMiddleware._dispatch(connectionOpened(newConnection));
+    };
+
+    newConnection.onclose = function (reason, details) {
+      autobahnMiddleware._dispatch(connectionClosed(reason, details));
+    };
+
+    autobahnMiddleware._connection = newConnection;
+  };
+
+  /**
+   * Closes the current autobahn connection
+   * @function closeConnection
+   * @memberof redux-autobahn:middleware
+   * @param  {string} reason  (optional) a WAMP URI providing a closing reason to the server side (e.g. 'com.myapp.close.signout'). default is `wamp.goodbye.normal`
+   * @param  {string} message  human-readable closing message
+   */
+  autobahnMiddleware.closeConnection = function (reason, message) {
+    if (isConnected(autobahnMiddleware._connection)) {
+      autobahnMiddleware._connection.close(reason, message);
+    }
+    autobahnMiddleware._connection = null;
+  };
+
+  return autobahnMiddleware;
+}

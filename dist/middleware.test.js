@@ -1,5 +1,9 @@
 'use strict';
 
+var _lodash = require('lodash');
+
+var _lodash2 = _interopRequireDefault(_lodash);
+
 var _autobahn = require('autobahn');
 
 var _middleware = require('./middleware');
@@ -19,16 +23,40 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var createTestConnection = function createTestConnection() {
-  return new _autobahn.Connection({
+  var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+      session = _ref.session,
+      isOpen = _ref.isOpen;
+
+  var conn = new _autobahn.Connection({
     url: 'ws://localhost:8000/',
     realm: 'realm1'
   });
+  var _session = session || createTestSession();
+  Object.defineProperty(conn, 'session', {
+    get: function get() {
+      return _session;
+    },
+    set: function set(session) {
+      _session = session;
+    }
+  });
+  var _isOpen = isOpen || false;
+  Object.defineProperty(conn, 'isOpen', {
+    get: function get() {
+      return _isOpen;
+    },
+    set: function set(isOpen) {
+      _isOpen = isOpen;
+    }
+  });
+  return conn;
 };
 
 var createTestStore = function createTestStore() {
   var actions = [];
   return {
     actions: actions,
+    next: function next(action) {},
     dispatch: function dispatch(action) {
       actions.push(action);
     }
@@ -44,38 +72,35 @@ var setup = function setup() {
 
   var connection = options.connection || createTestConnection();
   var store = options.store || createTestStore();
-  var session = options.session || createTestSession();
-  var middleware = (0, _middleware2.default)(connection);
+  var middleware = (0, _middleware2.default)({ connection: connection });
   var nextHandler = middleware(store);
 
   return {
     connection: connection,
     store: store,
-    session: session,
     middleware: middleware,
     nextHandler: nextHandler
   };
 };
 
 describe('middleware', function () {
-  it('throws an error when it is not given an autobahn.Connection', function () {
+  it('returns middleware when it is not given an autobahn.Connection', function () {
     expect(function () {
       return (0, _middleware2.default)();
-    }).toThrow('autobahn.Connection required');
+    }).toBeInstanceOf(Function);
   });
 
   describe('when the connection opens', function () {
     it('dispatches a CONNECTION_OPENED action with the given session', function () {
       var _setup = setup(),
           connection = _setup.connection,
-          store = _setup.store,
-          session = _setup.session;
+          store = _setup.store;
 
-      connection.onopen(session);
+      connection.onopen(connection.session);
 
       expect(store.actions).toEqual([{
         type: types.CONNECTION_OPENED,
-        session: session
+        session: connection.session
       }]);
     });
   });
@@ -84,13 +109,14 @@ describe('middleware', function () {
     it('dispatches a CONNECTION_CLOSED action', function () {
       var _setup2 = setup(),
           connection = _setup2.connection,
-          store = _setup2.store,
-          session = _setup2.session;
+          store = _setup2.store;
 
-      connection.onclose(session);
+      connection.onclose('newConnection', 'new connection has been set');
 
       expect(store.actions).toEqual([{
-        type: types.CONNECTION_CLOSED
+        type: types.CONNECTION_CLOSED,
+        details: 'new connection has been set',
+        reason: 'newConnection'
       }]);
     });
   });
@@ -100,18 +126,20 @@ describe('middleware', function () {
       it('dispatches a CONNECTED action', function () {
         var session = { id: 1, isOpen: true };
 
-        var _setup3 = setup({ session: session }),
+        var _setup3 = setup({
+          connection: createTestConnection({ session: session, isOpen: true })
+        }),
             connection = _setup3.connection,
             store = _setup3.store,
             nextHandler = _setup3.nextHandler;
 
-        connection.onopen(session);
+        connection.onopen(connection.session);
 
         nextHandler()(actionCreators.openConnection());
 
         expect(store.actions).toEqual([{
           type: types.CONNECTION_OPENED,
-          session: session
+          session: connection.session
         }, {
           type: types.CONNECTED
         }]);
@@ -141,17 +169,21 @@ describe('middleware', function () {
       it('dispatches a DISCONNECTED action', function () {
         var session = { id: 1, isOpen: false };
 
-        var _setup5 = setup({ session: session }),
+        var _setup5 = setup({
+          connection: createTestConnection({ session: session, isOpen: false })
+        }),
             connection = _setup5.connection,
             store = _setup5.store,
             nextHandler = _setup5.nextHandler;
 
-        connection.onclose(session);
+        connection.onclose('newConnection', 'new connection has been set');
 
         nextHandler()(actionCreators.closeConnection());
 
         expect(store.actions).toEqual([{
-          type: types.CONNECTION_CLOSED
+          type: types.CONNECTION_CLOSED,
+          details: 'new connection has been set',
+          reason: 'newConnection'
         }, {
           type: types.DISCONNECTED
         }]);
@@ -161,22 +193,23 @@ describe('middleware', function () {
 
   describe('when it is connected', function () {
     it('calls close on the connection', function () {
-      var isClosed = false;
-      var connection = createTestConnection();
-      connection.close = function () {
-        isClosed = true;
-      };
-
       var session = { id: 1, isOpen: true };
 
-      var _setup6 = setup({ connection: connection, session: session }),
+      var _setup6 = setup({
+        connection: createTestConnection({ session: session, isOpen: true })
+      }),
+          connection = _setup6.connection,
           nextHandler = _setup6.nextHandler;
 
-      connection.onopen(session);
+      connection.close = function () {
+        connection.isOpen = false;
+      };
+
+      connection.onopen(connection.session);
 
       nextHandler()(actionCreators.closeConnection());
 
-      expect(isClosed).toEqual(true);
+      expect(connection.isOpen).toEqual(false);
     });
   });
 });
