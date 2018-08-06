@@ -312,7 +312,7 @@ const handleAction = (connection, dispatch, next, action) => {
 
     case types.CALL:
       return !isConnected(connection) ? dispatch(disconnected())
-        : connection.session.call(action.procedure, action.args, action.kwargs, action.options).then((res) => {
+        : connection.session.call(action.procedure, action.args, action.kwargs, action.options, action.resultAction, action.errorAction, action.progressAction).then((res) => {
           if (action.resultAction) {
             return dispatch(action.resultAction(res));
           }
