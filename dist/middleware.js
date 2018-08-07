@@ -356,7 +356,7 @@ var handleAction = function handleAction(connection, dispatch, next, action) {
       });
 
     case types.CALL:
-      return !isConnected(connection) ? dispatch(disconnected()) : connection.session.call(action.procedure, action.args, action.kwargs, action.options).then(function (res) {
+      return !isConnected(connection) ? dispatch(disconnected()) : connection.session.call(action.procedure, action.args, action.kwargs, action.options, action.resultAction, action.errorAction, action.progressAction).then(function (res) {
         if (action.resultAction) {
           return dispatch(action.resultAction(res));
         }
@@ -366,6 +366,11 @@ var handleAction = function handleAction(connection, dispatch, next, action) {
           return dispatch(action.errorAction(err));
         }
         return dispatch(callError(err));
+      }, function (progress) {
+        if (action.progressAction) {
+          return dispatch(action.progressAction(progress));
+        }
+        return dispatch(callError(progress));
       });
 
     default:

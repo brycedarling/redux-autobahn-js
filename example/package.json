@@ -1,0 +1,29 @@
+{
+  "name": "example",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "express": "^4.16.3",
+    "react": "^16.4.2",
+    "react-dom": "^16.4.2",
+    "react-redux": "^5.0.7",
+    "react-scripts": "1.1.4",
+    "redux": "^4.0.0",
+    "redux-autobahn-js": "^0.1.2",
+    "redux-thunk": "^2.3.0",
+    "wamp-server": "0.0.8"
+  },
+  "scripts": {
+    "start": "npm-run-all -p wamp-server react-start",
+    "wamp-server": "babel-node wampserver",
+    "react-start": "PORT=3002 react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.0.0-beta.55",
+    "@babel/node": "^7.0.0-beta.55",
+    "npm-run-all": "^4.1.3"
+  }
+}

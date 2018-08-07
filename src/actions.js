@@ -110,7 +110,7 @@ export const unregister = registration => ({
  * @param {object} errorAction - (optional) An action to be dispatched on call error.
  * @return {object} redux action
  */
-export const call = (procedure, args, kwargs, options, resultAction, errorAction) => ({
+export const call = (procedure, args, kwargs, options, resultAction, errorAction,progressAction) => ({
   type: types.CALL,
   procedure,
   args,
@@ -118,4 +118,5 @@ export const call = (procedure, args, kwargs, options, resultAction, errorAction
   options,
   resultAction,
   errorAction,
+  progressAction
 });
